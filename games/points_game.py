@@ -1,57 +1,103 @@
+class PointsGame:
+    @classmethod
+    def setup(cls):
+        pass
 
-CARD_NUMBER = 4
-RESULT_VALUE = 24
+    @classmethod
+    def points_gmae(cls):
+        pass
 
-numbers = [13, 5, 7, 3]
-results = [None, None, None, None]
+    @classmethod
+    def run(cls):
+        cls.points_game()
+
+    @classmethod
+    def main(cls):
+        cls.setup()
+        cls.run()
 
 
-def points_game(n):
-    if n == 1:
-        if numbers[0] == RESULT_VALUE:
-            return True
-        else:
-            return False
+class Solution1(PointsGame):
+    @classmethod
+    def setup(cls):
+        import numpy as np
+        from array import array
+        cls.CARD_NUMBER = 4
+        cls.RESULT_VALUE = 24
+        cls.case = np.random.randint(1, 14, size=4)
+        cls.nums = array("d", cls.case)
+        cls.ress = list(cls.case)
 
-    for i in range(n):
-        for j in range(i+1, n):
-            a, b = numbers[i], numbers[j]
-            expa, expb = results[i], results[j]
-
-            numbers[j] = numbers[n - 1]
-            results[j] = results[n - 1]
-
-            results[i] = f"({expa}+{expb})"
-            numbers[i] = a + b
-            if points_game(n - 1):
+    @classmethod
+    def points_game(cls, n):
+        """
+        Beauty of Programming 24点游戏(***, P103) Solution.1
+        """
+        if n == 1:
+            if cls.nums[0] == cls.RESULT_VALUE:
                 return True
+            else:
+                return False
 
-            results[i] = f"({expb}-{expa})"
-            numbers[i] = b - 1
-            if points_game(n - 1):
-                return True
+        for i in range(n):
+            for j in range(i + 1, n):
+                a, b = cls.nums[i], cls.nums[j]
+                expa, expb = cls.ress[i], cls.ress[j]
 
-            results[i] = f"({expa}*{expb})"
-            numbers[i] = a * b
-            if points_game(n - 1):
-                return True
+                cls.nums[j] = cls.nums[n - 1]
+                cls.ress[j] = cls.ress[n - 1]
 
-            if b != 0:
-                results[i] = f"({expa}/{expb})"
-                numbers[i] = a / b
-                if points_game(n - 1):
+                cls.ress[i] = f"({expa}+{expb})"
+                cls.nums[i] = a + b
+                if cls.points_game(n - 1):
                     return True
 
-            if a != 0:
-                results[i] = f"({expb}/{expa})"
-                numbers[i] = b / a
-                if points_game(n - 1):
+                cls.ress[i] = f"({expb}-{expa})"
+                cls.nums[i] = b - a
+                if cls.points_game(n - 1):
                     return True
 
-            numbers[i], numbers[j] = a, b
-            results[i], results[j] = expa, expb
+                cls.ress[i] = f"({expa}*{expb})"
+                cls.nums[i] = a * b
+                if cls.points_game(n - 1):
+                    return True
 
-    return False
+                if b != 0:
+                    cls.ress[i] = f"({expa}/{expb})"
+                    cls.nums[i] = a / b
+                    if cls.points_game(n - 1):
+                        return True
 
-points_game(4)
-results
+                if a != 0:
+                    cls.ress[i] = f"({expb}/{expa})"
+                    cls.nums[i] = b / a
+                    if cls.points_game(n - 1):
+                        return True
+
+                cls.nums[i], cls.nums[j] = a, b
+                cls.ress[i], cls.ress[j] = expa, expb
+
+        return False
+
+    @classmethod
+    def run(cls):
+        print(f"CASE:{cls.case}")
+        print(f"RESULT: {cls.points_game(cls.CARD_NUMBER), cls.ress[0]}")
+
+
+class Solution2(PointsGame):
+    @classmethod
+    def points_game(cls, numbers, value):
+        if len(numbers) == 1:
+            if numbers[0] == 24:
+                return True
+            else:
+                return False
+        for i in range(len(numbers)):
+            for j in range(i + 1, len(numbers)):
+                a, b = numbers[i], numbers[j]
+
+
+def main():
+    Solution1.main()
+    # Solution2.main()
