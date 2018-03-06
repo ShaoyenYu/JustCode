@@ -1,19 +1,48 @@
-# q2 Add
+# Q9 Palindrome Number *
+def isPalindrome(x):
+    """
+    Determine whether an integer is a palindrome. Do this without extra space.
+    Some hints:
+    Could negative integers be palindromes? (ie, -1)
 
-# Q86 Partition List
-# Definition for singly-linked list.
-class Solution(object):
-    class ListNode(object):
-        def __init__(self, x):
-            self.val = x
-            self.next = None
+    If you are thinking of converting the integer to string, note the restriction of using extra space.
 
-    def partition(self, head, x):
-        """
-        :type head: ListNode
-        :type x: int
-        :rtype: ListNode
-        """
+    You could also try reversing an integer. However, if you have solved the problem "Reverse Integer", you know that the reversed integer might overflow. How would you handle such case?
+
+    There is a more generic way of solving this problem.
+
+    Args:
+        x:
+
+    Returns:
+        bool
+    """
+
+    # # Method 1
+    # if x < 0:
+    #     return False
+    #
+    # l = []
+    # is_palindrome = True
+    #
+    # while True:
+    #     quotient, remainder = divmod(x, 10)
+    #     l.append(remainder)
+    #     x = quotient
+    #     if quotient == 0:
+    #         break
+    #
+    # L = len(l)
+    # for i in range(L):
+    #     lidx, ridx = i, L - i - 1
+    #     if l[lidx] != l[ridx]:
+    #         is_palindrome = False
+    #         break
+    #
+    #     if ridx - lidx <= 1:
+    #         break
+    #
+    # return is_palindrome
 
 
 # Q268 Missing Number *
@@ -37,6 +66,7 @@ def missing_number(nums):
     :param nums: array containing n distinct numbers taken from 0, 1, 2, ..., n
     :return: the missing number of the array
     """
+
     # # Method 1 Traversal
     # nums.sort()
     # if nums[0] == 0:
@@ -66,6 +96,9 @@ def missing_number(nums):
     # if nums[middle] < middle:
     #     left = middle
 
+
+################################
+################################
 
 def insertion_sort(arr):
     # 1``
