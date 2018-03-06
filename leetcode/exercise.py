@@ -44,6 +44,27 @@ def isPalindrome(x):
     #
     # return is_palindrome
 
+    # # Method 2
+    if x < 0:
+        return False
+
+    if x / 10 == 0:
+        return True
+
+    if x % 10 == 0:
+        return False
+
+    h = x
+    l = 0
+    while h > l:
+        print(f"l:{l}, h:{h}")
+        l *= 10
+        l += h % 10
+        if l == h:
+            return True
+        h /= 10
+    return h == l
+
 
 # Q268 Missing Number *
 def missing_number(nums):
