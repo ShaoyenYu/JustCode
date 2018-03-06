@@ -13,9 +13,9 @@ def hello(c: canvas.Canvas):
 
 
 c = canvas.Canvas("hello.pdf")
-hello(c)
-c.showPage()
-c.save()
+# hello(c)
+# c.showPage()
+# c.save()
 
 # Most common page sizes are found in the library module
 
@@ -42,10 +42,27 @@ def hello(c: canvas.Canvas = None):
     c.rotate(-30)
     c.setFillColorRGB(0, 0.15, 0.03)
     c.setFillColorRGB(0.31, 0.15, 0.64)
-    c.drawString(20, 20, "Hello World from Reportlab")
+    c.drawString(20, 20,
+                 "Hello World from Reportlab" + " TEST LONG STRING WHICH IS REALLY REALLY REALLY REALLY REALLY REALLY REALLY LONG")
 
     c.showPage()
     c.save()
 
 
-hello(1)
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import Paragraph
+from reportlab.pdfgen.canvas import Canvas
+
+styleSheet = getSampleStyleSheet()
+style = styleSheet['BodyText']
+P = Paragraph('This is a very silly example', style)
+canv = Canvas('doc.pdf')
+aW = 460  # available width and height
+aH = 800
+w, h = P.wrap(aW, aH)  # find required space
+if w <= aW and h <= aH:
+    P.drawOn(canv, 0, aH)
+    aH = aH - h  # reduce the available height
+    canv.save()
+else:
+    raise ValueError("Not enough room")
