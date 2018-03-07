@@ -1,5 +1,7 @@
+
+
 # Q9 Palindrome Number *
-def isPalindrome(x):
+def is_palindrome(x):
     """
     Determine whether an integer is a palindrome. Do this without extra space.
     Some hints:
@@ -12,7 +14,7 @@ def isPalindrome(x):
     There is a more generic way of solving this problem.
 
     Args:
-        x:
+        x: integer
 
     Returns:
         bool
@@ -64,6 +66,41 @@ def isPalindrome(x):
             return True
         h /= 10
     return h == l
+
+
+# Q11 Container With Most Water **
+def max_area(height):
+    """
+    Given n non-negative integers a1, a2, ..., an, where each represents a point at coordinate (i, ai). n vertical lines are drawn such that the two endpoints of line i is at (i, ai) and (i, 0). Find two lines, which together with x-axis forms a container, such that the container contains the most water.
+    Note: You may not slant the container and n is at least 2.
+
+    Args:
+        height: list[int]
+
+    Returns:
+        int
+
+    """
+
+    points = list(enumerate(height))
+    max_area = 0
+    l, r = 0, len(points) - 1
+
+    while True:
+        shorter_side = l if points[l][1] <= points[r][1] else r
+        area = (points[r][0] - points[l][0]) * points[shorter_side][1]
+        if area > max_area:
+            max_area = area
+
+        if l == shorter_side:
+            l += 1
+        else:
+            r -= 1
+
+        if l == r:
+            break
+
+    return max_area
 
 
 # Q268 Missing Number *
