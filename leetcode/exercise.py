@@ -1,5 +1,11 @@
 
 
+# Q5 Longest Palindromic Substring
+def longest_palindromine():
+    # Manacher's algorithm
+    pass
+
+
 # Q9 Palindrome Number *
 def is_palindrome(x):
     """
@@ -101,6 +107,34 @@ def max_area(height):
             break
 
     return max_area
+
+
+# Q100 Same Tree *
+def is_same_tree(p, q):
+    """
+    Given two binary trees, write a function to check if they are the same or not.
+
+    Two binary trees are considered the same if they are structurally identical and the nodes have the same value.
+
+    Args:
+        p: TreeNode
+        q: TreeNode
+
+    Returns:
+        bool
+
+    """
+
+    # Definition for a binary tree node.
+    # class TreeNode:
+    #     def __init__(self, x):
+    #         self.val = x
+    #         self.left = None
+    #         self.right = None
+
+    if p and q:
+        return p.val == q.val and is_same_tree(p.left, q.left) and is_same_tree(p.right, q.right)
+    return p is q
 
 
 # Q268 Missing Number *
