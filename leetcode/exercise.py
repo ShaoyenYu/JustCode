@@ -188,6 +188,8 @@ def single_number(nums):
     return nums[-1]
 
     # Method 2
+    # 1) N XOR N = 0
+    # 2) XOR is associative & commutative
     res = 0
     for num in nums:
         res ^= num
