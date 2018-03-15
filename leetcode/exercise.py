@@ -164,6 +164,36 @@ def is_same_tree(p, q):
     return p is q
 
 
+# Q136 Single Number *
+def single_number(nums):
+    """
+    Given an array of integers, every element appears twice except for one. Find that single one.
+
+    Note:
+    Your algorithm should have a linear runtime complexity. Could you implement it without using extra memory?
+
+    Args:
+        nums: list[int]
+
+    Returns:
+        int
+
+    """
+
+    # Method 1
+    nums = sorted(nums)
+    for i in range(0, len(nums) - 2, 2):
+        if nums[i] != nums[i + 1]:
+            return nums[i]
+    return nums[-1]
+
+    # Method 2
+    res = 0
+    for num in nums:
+        res ^= num
+    return res
+
+
 # Q268 Missing Number *
 def missing_number(nums):
     """
