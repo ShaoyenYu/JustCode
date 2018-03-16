@@ -22,6 +22,7 @@ class PointsGame1(Solution):
         """
         if n == 1:
             if cls.nums[0] == cls.RESULT_VALUE:
+                cls.allress.append(cls.ress[0])
                 return True
             else:
                 return False
@@ -78,9 +79,10 @@ class PointsGame1(Solution):
         cls.CARD_NUMBER = 4
         cls.RESULT_VALUE = 24
         cls.case = np.random.randint(1, 14, size=4)
-        cls.case = [1, 13, 8, 3]
+        cls.case = [1, 3, 9, 11]
         cls.nums = array("d", cls.case)
         cls.ress = list(cls.case)
+        cls.allress = []
 
     @classmethod
     def _run(cls):
@@ -132,7 +134,7 @@ class PointsGame2(Solution):
 
 def main():
     PointsGame1.main()
-    PointsGame2.main()
+    # PointsGame2.main()
 
 
 if __name__ == "__main__":

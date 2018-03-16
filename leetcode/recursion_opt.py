@@ -93,6 +93,6 @@ def test():
     recsum(5)
 
     fib(30)  # 1.48ms
-    fib_to(30)  # 55 us
+    fib_to(30)  # 55 us, O(n) stack-depth
     fib_cc(30)  # 181 ns, O(n) stack-depth
     fib_ccto(30)  # 180ns, O(1) stack-depth

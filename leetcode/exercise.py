@@ -164,6 +164,41 @@ def is_same_tree(p, q):
     return p is q
 
 
+# Q101 Symmetric Tree
+class Solution101:
+    def is_symmetric(self, root):
+        """
+        Given a binary tree, check whether it is a mirror of itself (ie, symmetric around its center).
+
+        For example, this binary tree [1,2,2,3,4,4,3] is symmetric:
+
+        Args:
+            root: TreeNode
+
+        Returns:
+            bool
+
+        """
+
+        # Definition for a binary tree node.
+        # class TreeNode:
+        #     def __init__(self, x):
+        #         self.val = x
+        #         self.left = None
+        #         self.right = None
+
+        if root is None:
+            return True
+        return self.is_mirror(root.left, root.right)
+
+    def is_mirror(self, l, r):
+        if l is None and r is None:
+            return True
+        if (l is None) ^ (r is None):
+            return False
+        return l.val == r.val and self.is_mirror(l.left, r.right) and self.is_mirror(l.right, r.left)
+
+
 # Q136 Single Number *
 def single_number(nums):
     """
