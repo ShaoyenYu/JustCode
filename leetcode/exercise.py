@@ -231,6 +231,79 @@ def single_number(nums):
     return res
 
 
+# Q155 Min Stack *
+class MinStack:
+    """
+    Design a stack that supports push, pop, top, and retrieving the minimum element in constant time.
+
+    push(x) -- Push element x onto stack.
+    pop() -- Removes the element on top of the stack.
+    top() -- Get the top element.
+    getMin() -- Retrieve the minimum element in the stack.
+
+    """
+
+    def __init__(self):
+        """
+        initialize your data structure here.
+        """
+        self.stack = []
+
+    def push(self, x):
+        """
+        :type x: int
+        :rtype: void
+        """
+        if len(self.stack) > 0:
+            val = (x, min(x, self.stack[-1][1]))
+            self.stack.append(val)
+        self.stack.append((x, x))
+
+    def pop(self):
+        """
+        :rtype: void
+        """
+        self.stack.pop()
+
+    def top(self):
+        """
+        :rtype: int
+        """
+        return self.stack[-1][0]
+
+    def getMin(self):
+        """
+        :rtype: int
+        """
+        return self.stack[-1][1]
+
+
+# Q198 House Robber *
+def rob(nums):
+    """
+    You are a professional robber planning to rob houses along a street. Each house has a certain amount of money stashed, the only constraint stopping you from robbing each of them is that adjacent houses have security system connected and it will automatically contact the police if two adjacent houses were broken into on the same night.
+
+    Given a list of non-negative integers representing the amount of money of each house, determine the maximum amount of money you can rob tonight without alerting the police.
+
+    Args:
+        nums: list[int]
+
+    Returns:
+        int
+
+    """
+
+    # DP
+    r = nr = 0
+    for x in nums:
+        r_prev = r
+
+        r = nr + x
+        nr = max(r_prev, nr)
+
+    return max(r, nr)
+
+
 # Q268 Missing Number *
 def missing_number(nums):
     """
