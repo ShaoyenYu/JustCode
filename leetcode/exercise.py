@@ -402,6 +402,34 @@ class Solution501:
             self.update_freq(node.right, cache)
 
 
+# Q643 Maximum Average Subarray I *
+class Solution643:
+    def findMaxAverage(self, nums, k):
+        """
+        Given an array consisting of n integers, find the contiguous subarray of given length k that has the maximum
+        average value. And you need to output the maximum average value.
+        Note:
+            1 <= k <= n <= 30,000.
+            Elements of the given array will be in the range [-10,000, 10,000].
+
+        Args:
+            nums: List[int]
+            k: int
+
+        Returns:
+            float
+
+        """
+
+        current = max_total = sum(nums[:k])
+
+        for i in range(1, len(nums) - k + 1):
+            current += (nums[i + k - 1] - nums[i - 1])
+            max_total = max(current, max_total)
+
+        return max_total / k
+
+
 ################################
 ################################
 
