@@ -303,6 +303,10 @@ def rob(nums):
 
     return max(r, nr)
 
+    # f(0): r = nums[0]; nr = 0
+    # f(1): r = nums[1]; nr = f(0)
+    # f(k) = max( f(k-2) + nums[k], f(k-1) )
+
 
 # Q268 Missing Number *
 def missing_number(nums):
@@ -354,6 +358,48 @@ def missing_number(nums):
     # middle = (left + right) / 2
     # if nums[middle] < middle:
     #     left = middle
+
+
+# Q501 Find Mode in Binary Search Tree *
+class Solution501:
+    """
+    Given a binary search tree (BST) with duplicates, find all the mode(s) (the most frequently occurred element) in the given BST.
+
+    Assume a BST is defined as follows:
+
+    The left subtree of a node contains only nodes with keys less than or equal to the node's key.
+    The right subtree of a node contains only nodes with keys greater than or equal to the node's key.
+    Both the left and right subtrees must also be binary search trees.
+
+    """
+
+    # Definition for a binary tree node.
+    # class TreeNode:
+    #     def __init__(self, x):
+    #         self.val = x
+    #         self.left = None
+    #         self.right = None
+
+    def findMode(self, root):
+        """
+        :type root: TreeNode
+        :rtype: List[int]
+        """
+        if root is None:
+            return []
+
+        cache = {}
+        self.update_freq(root, cache)
+        mode_count = max(cache.values())
+        return [k for k, v in cache.items() if v == mode_count]
+
+    def update_freq(self, node, cache):
+        cache[node.val] = cache.get(node.val, 0) + 1
+
+        if node.left:
+            self.update_freq(node.left, cache)
+        if node.right:
+            self.update_freq(node.right, cache)
 
 
 ################################
