@@ -231,6 +231,41 @@ def single_number(nums):
     return res
 
 
+# Q141 Linked List Cycle *
+class Solution(object):
+    # Definition for singly-linked list.
+    # class ListNode(object):
+    #     def __init__(self, x):
+    #         self.val = x
+    #         self.next = None
+
+    def has_cycle(self, head):
+        """
+        Given a linked list, determine if it has a cycle in it.
+
+        Follow up:
+        Can you solve it without using extra space?
+
+        Args:
+            head: ListNode
+
+        Returns:
+            bool
+
+        """
+
+        # METHOD 1 EAFP + Floyd's Tortoise and Hare algorithm O(n) algorithm, O(1) space
+        try:
+            tortoise, hare = head.next, head.next.next
+            while tortoise is not hare:
+                tortoise = tortoise.next
+                hare = hare.next.next
+            return True
+
+        except:
+            return False
+
+
 # Q155 Min Stack *
 class MinStack:
     """
