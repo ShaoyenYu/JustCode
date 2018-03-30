@@ -206,6 +206,46 @@ def is_same_tree(p, q):
     return p is q
 
 
+# 112 Path Sum
+class Solution:
+    # Definition for a binary tree node.
+    # class TreeNode:
+    #     def __init__(self, x):
+    #         self.val = x
+    #         self.left = None
+    #         self.right = None
+
+    def hasPathSum(self, root, sum_):
+        """
+
+        Args:
+            root: TreeNode
+            sum_: int
+
+        Returns:
+            bool
+
+        """
+
+        if root is None:
+            return False
+
+        return self.walk(root, 0, sum_)
+
+    def walk(self, node, cur, sum_):
+        cur += node.val
+        if cur == sum_ and node.left is None and node.right is None:
+            return True
+
+        l = r = False
+        if node.left:
+            l = self.walk(node.left, cur, sum_)
+        if node.right:
+            r = self.walk(node.right, cur, sum_)
+
+        return l or r
+
+
 # Q101 Symmetric Tree
 class Solution101:
     def is_symmetric(self, root):
