@@ -109,6 +109,48 @@ def max_area(height):
     return max_area
 
 
+# Q26 Remove Duplicates from Sorted Array
+def remove_duplicates(nums):
+    """
+    Given a sorted array, remove the duplicates in-place such that each element appear only once and return the new
+    length.
+    Do not allocate extra space for another array, you must do this by modifying the input array in-place with O(1)
+    extra memory.
+
+    Args:
+        nums: list<int>
+
+    Returns:
+        int
+
+    """
+
+    # Method 1
+    # if len(nums) == 0:
+    #     return 0
+    #
+    # removed = 0
+    #
+    # for i in range(1, len(nums)):
+    #     i -= removed
+    #     if nums[i] == nums[i - 1]:
+    #         del nums[i]  # LIST DEL operation is O(n)
+    #         removed += 1
+    # return len(nums)
+
+    # Method 2
+    if len(nums) == 0:
+        return 0
+
+    idx = 0
+    for i in range(1, len(nums)):
+        if nums[i] != nums[idx]:
+            idx += 1
+            nums[idx] = nums[i]
+
+    return idx + 1
+
+
 # Q53 Maximum Subarray *
 def max_subarray(nums):
     """
