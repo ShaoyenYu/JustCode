@@ -178,6 +178,26 @@ def max_subarray(nums):
     return max_so_far
 
 
+# Q67 Add Binary *
+def addBinary(a, b):
+    """
+    Given two binary strings, return their sum (also a binary string).
+    For example,
+    a = "11", b = "1"
+    Return "100".
+
+    Args:
+        a: str
+        b: str
+
+    Returns:
+        str
+
+    """
+
+    return bin(int(a, 2) + int(b, 2))[2:]
+
+
 # Q100 Same Tree *
 def is_same_tree(p, q):
     """
@@ -475,6 +495,43 @@ def missing_number(nums):
     # middle = (left + right) / 2
     # if nums[middle] < middle:
     #     left = middle
+
+
+# Q374 Guess Number Higher or Lower *
+class Solution(object):
+    # The guess API is already defined for you.
+    # @param num, your guess
+    # @return -1 if my number is lower, 1 if my number is higher, otherwise return 0
+    # def guess(num):
+    def guess(self, n):
+        pass
+
+    def guessNumber(self, n):
+        """
+        We are playing the Guess Game. The game is as follows:
+        I pick a number from 1 to n. You have to guess which number I picked.
+        Every time you guess wrong, I'll tell you whether the number is higher or lower.
+        You call a pre-defined API guess(int num) which returns 3 possible results (-1, 1, or 0):
+
+        Args:
+            n: int
+
+        Returns:
+            int
+
+        """
+
+        lo, hi = 1, n
+        while lo < hi:
+            mid = (lo + hi) // 2
+            res = self.guess(mid)
+            if res == 1:
+                lo = mid + 1
+            elif res == -1:
+                hi = mid
+            else:
+                return mid
+        return lo
 
 
 # Q501 Find Mode in Binary Search Tree *
