@@ -334,7 +334,7 @@ def single_number(nums):
 
 
 # Q141 Linked List Cycle *
-class Solution(object):
+class Solution141(object):
     # Definition for singly-linked list.
     # class ListNode(object):
     #     def __init__(self, x):
@@ -498,7 +498,7 @@ def missing_number(nums):
 
 
 # Q374 Guess Number Higher or Lower *
-class Solution(object):
+class Solution374(object):
     # The guess API is already defined for you.
     # @param num, your guess
     # @return -1 if my number is lower, 1 if my number is higher, otherwise return 0
@@ -532,6 +532,34 @@ class Solution(object):
             else:
                 return mid
         return lo
+
+
+# Q441 Arranging Coins
+class Solution441:
+    def arrangeCoins(self, n):
+        """
+        You have a total of n coins that you want to form in a staircase shape, where every k-th row must have exactly k coins.
+        Given n, find the total number of full staircase rows that can be formed.
+        n is a non-negative integer and fits within the range of a 32-bit signed integer.
+
+        n = 5
+
+        The coins can form the following rows:
+        ¤
+        ¤ ¤
+        ¤ ¤
+
+        Because the 3rd row is incomplete, we return 2.
+
+        Args:
+            n: int
+
+        Returns:
+            int
+
+        """
+
+        return int((2 * n + 0.25) ** 0.5 - 0.5)
 
 
 # Q501 Find Mode in Binary Search Tree *
