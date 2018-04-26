@@ -301,6 +301,48 @@ class Solution101:
         return l.val == r.val and self.is_mirror(l.left, r.right) and self.is_mirror(l.right, r.left)
 
 
+# Q104 Maximum Depth of Binary Tree
+class Solution104:
+    def max_depth(self, root):
+        """
+        Given a binary tree, find its maximum depth.
+        The maximum depth is the number of nodes along the longest path from the root node down to the farthest leaf node.
+        Note: A leaf is a node with no children.
+
+        Example:
+        Given binary tree [3,9,20,null,null,15,7],
+        return its depth = 3.
+
+        Args:
+            root: TreeNode
+
+        Returns:
+
+        """
+
+        # Definition for a binary tree node.
+        # class TreeNode:
+        #     def __init__(self, x):
+        #         self.val = x
+        #         self.left = None
+        #         self.right = None
+
+        if root is None:
+            return 0
+        return self._max_depth(root, 1)
+
+    def _max_depth(self, node, depth):
+        l = r = depth
+        if not node.left and not node.right:
+            return depth
+        else:
+            if node.left:
+                l = self._max_depth(node.left, depth + 1)
+            if node.right:
+                r = self._max_depth(node.right, depth + 1)
+        return max(l, r)
+
+
 # Q136 Single Number *
 def single_number(nums):
     """
