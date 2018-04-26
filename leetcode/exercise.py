@@ -327,9 +327,16 @@ class Solution104:
         #         self.left = None
         #         self.right = None
 
+        # Soulution 1
         if root is None:
             return 0
         return self._max_depth(root, 1)
+
+        # Solution 2
+        # if not root:
+        #     return 0
+        #
+        # return 1 + max(self.maxDepth(root.left), self.maxDepth(root.right))
 
     def _max_depth(self, node, depth):
         l = r = depth
