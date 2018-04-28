@@ -681,6 +681,72 @@ class Solution643:
         return max_total / k
 
 
+# Q804
+class Solution804:
+    morses = [".-", "-...", "-.-.", "-..", ".", "..-.", "--.", "....", "..", ".---", "-.-", ".-..", "--", "-.",
+             "---", ".--.", "--.-", ".-.", "...", "-", "..-", "...-", ".--", "-..-", "-.--", "--.."]
+
+    cnt = 0
+
+    def uniqueMorseRepresentations(self, words):
+        """
+        :type words: List[str]
+        :rtype: int
+        """
+
+        morses = "".join([self.morses[ord(w) - 97] for w in words])
+        self.check_remain(morses)
+        return self.cnt
+
+    def check_remain(self, remain):
+        for mo in self.morses:
+            if len(mo) < len(remain):
+                if remain[:len(mo)] == mo:
+                    return self.check_remain(remain[len(mo):])
+            elif len(mo) == len(remain):
+                if mo == remain:
+                    self.cnt += 1
+
+
+# Q 804-1
+class Solution804_1:
+    morses_az = [".-", "-...", "-.-.", "-..", ".", "..-.", "--.", "....", "..", ".---", "-.-", ".-..", "--", "-.", "---", ".--.", "--.-", ".-.", "...", "-", "..-", "...-", ".--", "-..-", "-.--", "--.."]
+    cnt = 0
+
+    def another_morse_repr(self, words):
+        """
+
+        Args:
+            words: str
+
+        Returns:
+            int
+
+        """
+
+        morses = "".join([self.morses_az[ord(w) - 97] for w in words])
+        self.check_remain(morses)
+
+        return self.cnt
+
+    def check_remain(self, remain):
+        """
+
+        Args:
+            remain: str
+
+        Returns:
+
+        """
+
+        for mo in self.morses_az:
+            if len(mo) < len(remain):
+                if remain[:len(mo)] == mo:
+                    return self.check_remain(remain[len(mo):])
+            elif len(mo) == len(remain):
+                if mo == remain:
+                    self.cnt += 1
+
 ################################
 ################################
 
