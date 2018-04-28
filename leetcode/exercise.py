@@ -683,29 +683,21 @@ class Solution643:
 
 # Q804
 class Solution804:
-    morses = [".-", "-...", "-.-.", "-..", ".", "..-.", "--.", "....", "..", ".---", "-.-", ".-..", "--", "-.",
-             "---", ".--.", "--.-", ".-.", "...", "-", "..-", "...-", ".--", "-..-", "-.--", "--.."]
-
-    cnt = 0
+    morses_az = [".-", "-...", "-.-.", "-..", ".", "..-.", "--.", "....", "..", ".---", "-.-", ".-..", "--", "-.", "---",
+             ".--.", "--.-", ".-.", "...", "-", "..-", "...-", ".--", "-..-", "-.--", "--.."]
 
     def uniqueMorseRepresentations(self, words):
         """
-        :type words: List[str]
-        :rtype: int
+
+        Args:
+            words: list[str]
+
+        Returns:
+            int
+
         """
 
-        morses = "".join([self.morses[ord(w) - 97] for w in words])
-        self.check_remain(morses)
-        return self.cnt
-
-    def check_remain(self, remain):
-        for mo in self.morses:
-            if len(mo) < len(remain):
-                if remain[:len(mo)] == mo:
-                    return self.check_remain(remain[len(mo):])
-            elif len(mo) == len(remain):
-                if mo == remain:
-                    self.cnt += 1
+        return len(set(["".join([self.morses_az[ord(w) - 97] for w in word]) for word in words]))
 
 
 # Q 804-1
