@@ -178,6 +178,33 @@ def max_subarray(nums):
     return max_so_far
 
 
+# Q62 Unique Paths **
+def uniquePaths(m, n):
+    """
+    A robot is located at the top-left corner of a m x n grid (marked 'Start' in the diagram below).
+    The robot can only move either down or right at any point in time. The robot is trying to reach the bottom-right corner of the grid (marked 'Finish' in the diagram below).
+    How many possible unique paths are there?
+
+    Args:
+        m: int
+        n: int
+
+    Returns:
+        int
+
+    """
+
+    u, d = m - 1, m + n - 2
+    u = min(d - u, u)
+
+    res = 1
+    for i in range(d, d - u, -1):
+        res *= i
+    for i in range(1, u + 1):
+        res /= i
+    return int(res)
+
+
 # Q67 Add Binary *
 def addBinary(a, b):
     """
