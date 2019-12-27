@@ -1,6 +1,6 @@
 import requests
 import re
-from util.win32.base import set_text
+from util.win32.common import set_text
 
 
 session = requests.session()
@@ -68,7 +68,7 @@ def main():
     import time
     while True:
         try:
-            no = str(input())
+            no = str(input("#" * 64 + "\n"))
             if no == "?":
                 break
 
@@ -76,8 +76,8 @@ def main():
 
             text = f"{release_date} {serie_no} {title}"
             set_text(text)
-            print(actress)
-            print(text)
+            print(actress, text)
+            print("#" * 64, "\n")
             time.sleep(1)
         except Exception as e:
             print(e)
