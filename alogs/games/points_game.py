@@ -1,4 +1,3 @@
-
 class Solution:
     @classmethod
     def _setup(cls):
@@ -21,6 +20,18 @@ class PointsGame1(Solution):
         Beauty of Programming 24点游戏(***, P103) Solution.1
         """
         if n == 1:
+            ################################################################
+            # stack trace
+            to_prints = {
+                "n": f"{str(int(n)):3}",
+                "-": "-" * 80,
+                "nums": f"{str(list(cls.nums)):38}",
+                "exps": f"{str(list(cls.ress)):25}",
+            }
+            to_prints = "|  ".join((f"{k}: {v}" for k, v in to_prints.items()))
+            print(to_prints)
+            ################################################################
+
             if cls.nums[0] == cls.RESULT_VALUE:
                 cls.allress.append(cls.ress[0])
                 return True
@@ -37,6 +48,24 @@ class PointsGame1(Solution):
 
                 cls.ress[i] = f"({expa}+{expb})"
                 cls.nums[i] = a + b
+
+                ################################################################
+                # stack trace
+                to_prints = {
+                    "n": f"{str(int(n)):3}",
+                    "i": f"{str(int(i)):3}",
+                    "j": f"{str(int(j)):3}",
+                    "a": f"{str(a)[:4]:6}",
+                    "b": f"{str(b)[:4]:6}",
+                    "expa": f"{str(expa):13}",
+                    "expb": f"{str(expb):13}",
+                    "nums": f"{str(list(cls.nums)):38}",
+                    "exps": f"{str(list(cls.ress)):25}",
+                }
+                to_prints = "|  ".join((f"{k}: {v}" for k, v in to_prints.items()))
+                print(to_prints)
+                ################################################################
+
                 if cls.points_game(n - 1):
                     return True
 
@@ -70,6 +99,23 @@ class PointsGame1(Solution):
                 cls.nums[i], cls.nums[j] = a, b
                 cls.ress[i], cls.ress[j] = expa, expb
 
+                ################################################################
+                # stack trace
+                to_prints = {
+                    "n": f"{str(int(n)):3}",
+                    "i": f"{str(int(i)):3}",
+                    "j": f"{str(int(j)):3}",
+                    "a": f"{str(a)[:4]:6}",
+                    "b": f"{str(b)[:4]:6}",
+                    "expa": f"{str(expa):13}",
+                    "expb": f"{str(expb):13}",
+                    "nums": f"{str(list(cls.nums)):38}",
+                    "exps": f"{str(list(cls.ress)):25}",
+                }
+                to_prints = "|  ".join((f"{k}: {v}" for k, v in to_prints.items()))
+                print(to_prints)
+                ################################################################
+
         return False
 
     @classmethod
@@ -79,7 +125,7 @@ class PointsGame1(Solution):
         cls.CARD_NUMBER = 4
         cls.RESULT_VALUE = 24
         cls.case = np.random.randint(1, 14, size=4)
-        cls.case = [1, 3, 9, 11]
+        cls.case = [1, 2, 3, 4]
         cls.nums = array("d", cls.case)
         cls.ress = list(cls.case)
         cls.allress = []
