@@ -1,3 +1,4 @@
+from typing import List
 
 
 # Q5 Longest Palindromic Substring
@@ -107,6 +108,49 @@ def max_area(height):
             break
 
     return max_area
+
+
+# Q13 Roman to Integer
+class Solution13:
+    """
+    Roman numerals are represented by seven different symbols: I, V, X, L, C, D and M.
+
+    Symbol       Value
+    I             1
+    V             5
+    X             10
+    L             50
+    C             100
+    D             500
+    M             1000
+    For example, two is written as II in Roman numeral, just two one's added together. Twelve is written as, XII, which is simply X + II. The number twenty seven is written as XXVII, which is XX + V + II.
+
+    Roman numerals are usually written largest to smallest from left to right. However, the numeral for four is not IIII. Instead, the number four is written as IV. Because the one is before the five we subtract it making four. The same principle applies to the number nine, which is written as IX. There are six instances where subtraction is used:
+
+    I can be placed before V (5) and X (10) to make 4 and 9.
+    X can be placed before L (50) and C (100) to make 40 and 90.
+    C can be placed before D (500) and M (1000) to make 400 and 900.
+    Given a roman numeral, convert it to an integer. Input is guaranteed to be within the range from 1 to 3999.
+    """
+    roman_integer = {
+        "I": 1,
+        "V": 5,
+        "X": 10,
+        "L": 50,
+        "C": 100,
+        "D": 500,
+        "M": 1000,
+    }
+
+    def romanToInt(self, s: str):
+        total, last = 0, 1001  # 1001 just works as a sentinel
+        for c in s:
+            cur = self.roman_integer[c]
+            total += cur
+            if cur > last:
+                total -= 2 * last
+            last = cur
+        return total
 
 
 # Q26 Remove Duplicates from Sorted Array
@@ -253,46 +297,6 @@ def is_same_tree(p, q):
     return p is q
 
 
-# 112 Path Sum
-class Solution:
-    # Definition for a binary tree node.
-    # class TreeNode:
-    #     def __init__(self, x):
-    #         self.val = x
-    #         self.left = None
-    #         self.right = None
-
-    def hasPathSum(self, root, sum_):
-        """
-
-        Args:
-            root: TreeNode
-            sum_: int
-
-        Returns:
-            bool
-
-        """
-
-        if root is None:
-            return False
-
-        return self.walk(root, 0, sum_)
-
-    def walk(self, node, cur, sum_):
-        cur += node.val
-        if cur == sum_ and node.left is None and node.right is None:
-            return True
-
-        l = r = False
-        if node.left:
-            l = self.walk(node.left, cur, sum_)
-        if node.right:
-            r = self.walk(node.right, cur, sum_)
-
-        return l or r
-
-
 # Q101 Symmetric Tree
 class Solution101:
     def is_symmetric(self, root):
@@ -375,6 +379,46 @@ class Solution104:
             if node.right:
                 r = self._max_depth(node.right, depth + 1)
         return max(l, r)
+
+
+# 112 Path Sum
+class Solution112:
+    # Definition for a binary tree node.
+    # class TreeNode:
+    #     def __init__(self, x):
+    #         self.val = x
+    #         self.left = None
+    #         self.right = None
+
+    def hasPathSum(self, root, sum_):
+        """
+
+        Args:
+            root: TreeNode
+            sum_: int
+
+        Returns:
+            bool
+
+        """
+
+        if root is None:
+            return False
+
+        return self.walk(root, 0, sum_)
+
+    def walk(self, node, cur, sum_):
+        cur += node.val
+        if cur == sum_ and node.left is None and node.right is None:
+            return True
+
+        l = r = False
+        if node.left:
+            l = self.walk(node.left, cur, sum_)
+        if node.right:
+            r = self.walk(node.right, cur, sum_)
+
+        return l or r
 
 
 # Q136 Single Number *
@@ -491,6 +535,49 @@ class MinStack:
         return self.stack[-1][1]
 
 
+# Q169 Majority Element
+class Solution169_1:
+    """
+    Given an array of size n, find the majority element. The majority element is the element that appears more than ⌊ n/2 ⌋ times.
+
+    You may assume that the array is non-empty and the majority element always exist in the array.
+
+    Example 1:
+
+    Input: [3,2,3]
+    Output: 3
+    Example 2:
+
+    Input: [2,2,1,1,1,2,2]
+    Output: 2
+    """
+    def majorityElement(self, nums: List[int]) -> int:
+                quotient, remainer = divmod(len(nums), 2)
+                min_times = quotient + int(bool(remainer))
+                appearance = {}
+                for num in nums:
+                    appearance[num] = appearance.setdefault(num, 0) + 1
+
+                    if appearance[num] == min_times:
+                        return num
+
+
+class Solution169_2:
+    def majorityElement(self, nums: List[int]) -> int:
+        # use Boyer-Moore majority vote algorithm
+        i, cur = 0, nums[0]
+        for num in nums:
+            if cur == num:
+                i += 1
+            else:
+                i -= 1
+
+            if i == 0:
+                cur = num
+                i += 1
+        return cur
+
+
 # Q198 House Robber *
 def rob(nums):
     """
@@ -519,6 +606,52 @@ def rob(nums):
     # f(0): r = nums[0]; nr = 0
     # f(1): r = nums[1]; nr = f(0)
     # f(k) = max( f(k-2) + nums[k], f(k-1) )
+
+
+# Q229 Majority Element II
+class Solution229:
+    """
+    Given an integer array of size n, find all elements that appear more than ⌊ n/3 ⌋ times.
+
+    Note: The algorithm should run in linear time and in O(1) space.
+
+    Example 1:
+
+    Input: [3,2,3]
+    Output: [3]
+    Example 2:
+
+    Input: [1,1,1,3,3,2,2,2]
+    Output: [1,2]
+    """
+
+    def majorityElement(self, nums: List[int]) -> List[int]:
+        if len(nums) <= 2:
+            return list(set(nums))  # de-duplication
+
+        # first step, find the most frequent number, using Boyer-Moore algorithm
+        counter, cursors = [0] * 2, [nums[i] for i in range(2)]
+        for x in nums:
+            if x == cursors[0]:
+                counter[0] += 1
+            elif x == cursors[1]:
+                counter[1] += 1
+            elif counter[0] == 0:
+                cursors[0], counter[0] = x, 1
+            elif counter[1] == 0:
+                cursors[1], counter[1] = x, 1
+            else:
+                counter[0] -= 1
+                counter[1] -= 1
+
+        # second step, validate if these numbers have appeared more than (1/3 * len(nums)) times
+        counter[0], counter[1] = 0, 0
+        for x in nums:
+            if x == cursors[0]:
+                counter[0] += 1
+            elif x == cursors[1]:
+                counter[1] += 1
+        return list({cursors[i] for i in range(2) if counter[i] > len(nums) // 3})  # de-duplication
 
 
 # Q268 Missing Number *
@@ -708,8 +841,36 @@ class Solution643:
         return max_total / k
 
 
-# Q804
-class Solution804:
+# Q804 Unique Morse Code Words
+class Solution804_1:
+    """
+    International Morse Code defines a standard encoding where each letter is mapped to a series of dots and dashes, as follows: "a" maps to ".-", "b" maps to "-...", "c" maps to "-.-.", and so on.
+
+    For convenience, the full table for the 26 letters of the English alphabet is given below:
+
+    [".-","-...","-.-.","-..",".","..-.","--.","....","..",".---","-.-",".-..","--","-.","---",".--.","--.-",".-.","...","-","..-","...-",".--","-..-","-.--","--.."]
+    Now, given a list of words, each word can be written as a concatenation of the Morse code of each letter. For example, "cba" can be written as "-.-..--...", (which is the concatenation "-.-." + "-..." + ".-"). We'll call such a concatenation, the transformation of a word.
+
+    Return the number of different transformations among all words we have.
+
+    Example:
+    Input: words = ["gin", "zen", "gig", "msg"]
+    Output: 2
+    Explanation:
+    The transformation of each word is:
+    "gin" -> "--...-."
+    "zen" -> "--...-."
+    "gig" -> "--...--."
+    "msg" -> "--...--."
+
+    There are 2 different transformations, "--...-." and "--...--.".
+    Note:
+
+    The length of words will be at most 100.
+    Each words[i] will have length in range [1, 12].
+    words[i] will only consist of lowercase letters.
+    """
+
     morses_az = [".-", "-...", "-.-.", "-..", ".", "..-.", "--.", "....", "..", ".---", "-.-", ".-..", "--", "-.", "---",
              ".--.", "--.-", ".-.", "...", "-", "..-", "...-", ".--", "-..-", "-.--", "--.."]
 
@@ -727,8 +888,7 @@ class Solution804:
         return len(set(["".join([self.morses_az[ord(w) - 97] for w in word]) for word in words]))
 
 
-# Q 804-1
-class Solution804_1:
+class Solution804_2:
     morses_az = [".-", "-...", "-.-.", "-..", ".", "..-.", "--.", "....", "..", ".---", "-.-", ".-..", "--", "-.", "---", ".--.", "--.-", ".-.", "...", "-", "..-", "...-", ".--", "-..-", "-.--", "--.."]
     cnt = 0
 
@@ -765,78 +925,3 @@ class Solution804_1:
             elif len(mo) == len(remain):
                 if mo == remain:
                     self.cnt += 1
-
-################################
-################################
-
-def insertion_sort(arr):
-    # 1``
-    for i in range(1, len(arr)):
-        temp = arr[i]
-        j = i - 1
-        while j >= 0 and arr[j] > temp:
-            arr[j + 1] = arr[j]
-            j -= 1
-        arr[j + 1] = temp
-    return arr
-
-    # # 2
-    # for i in range(1, len(arr)):
-    #     temp = arr[i]
-    #     for j in range(i, 0, -1):
-    #         if arr[j - 1] > temp:
-    #             arr[j] = arr[j - 1]
-    #         else:
-    #             j += 1
-    #             break
-    #     arr[j - 1] = temp
-    # return arr
-
-
-def merge_sorted(iter1, iter2):
-    if len(iter1) > len(iter2):
-        iter1, iter2 = iter2, iter1
-    merged_list = []
-    idx = 0
-    for i in range(len(iter1)):
-        for j in range(idx, len(iter2)):
-            if iter1[i] < iter2[j]:
-                merged_list.append(iter1[i])
-                idx = j
-                break
-            elif iter1[i] > iter2[j]:
-                merged_list.append(iter2[j])
-                idx = j + 1
-            else:
-                merged_list.extend([iter1[i], iter2[j]])
-                idx = j + 1
-                break
-    merged_list.extend(iter2[idx:])
-
-    return merged_list
-
-
-def mindiff(a, b):
-    merged = sorted([*a, *b])
-    print(merged)
-    new_a, new_b = [], []
-    last, count = 0, 0
-    new_a.append(merged[0])
-    count += 2
-    for i in range(1, len(merged)):
-        if last == 0 and count == 1:
-            new_a.append(merged[i])
-            count += 1
-        elif last == 1 and count == 1:
-            new_b.append(merged[i])
-            count += 1
-        elif last == 0 and count == 2:
-            new_b.append(merged[i])
-            last = 1
-            count = 1
-        elif last == 1 and count == 2:
-            new_a.append(merged[i])
-            last = 0
-            count = 1
-
-    return new_a, new_b
