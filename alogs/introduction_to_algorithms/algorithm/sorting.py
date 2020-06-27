@@ -1,17 +1,52 @@
 def insertion_sort(array, ascending=True):
-    cmp = (lambda x, y: x > y) if ascending else (lambda x, y: x < y)
+    # Pseudo Code
+    # InsertionSort(A)
+    # for i = 2 to A.length - 1
+    #   key = A[i]
+    #   while j > 0 and array[j - 1] > key
+    #       array[j] = array[j - 1]
+    #       j = j - 1
+    #   array[j] = key
 
+    cmp = (lambda x, y: x > y) if ascending else (lambda x, y: x < y)
+    # maximums/minimums are inserted to the sorted section
     for i in range(1, len(array)):
         key = array[i]
         j = i - 1
-
         while j > -1 and cmp(array[j], key):
             array[j + 1] = array[j]
             j -= 1
         array[j + 1] = key
 
 
+def bubble_sort(array, ascending=True):
+    # Pseudo Code
+    # BubbleSort(A)
+    # for i = 1 to A.length - 1
+    #   for j = A.length to i + 1
+    #       if A[j - 1] > A[j]
+    #           exchange A[j] with A[j - 1]
+
+    cmp = (lambda x, y: x < y) if ascending else (lambda x, y: x > y)
+    # maximums/minimums are bubbled out of the unsorted section
+    for i in range(len(array) - 1):
+        for j in range(len(array) - 1, i, -1):
+            if cmp(array[j], array[j - 1]):
+                array[j], array[j - 1] = array[j - 1], array[j]
+
+
 def selection_sort(array):
+    # Pseudo Code
+    # SelectionSort(A)
+    # for i = 1 to A.length - 1:
+    #   index = i
+    #   key = array[index]
+    #   for j = i + 1 to A.length
+    #       if array[j] <= key
+    #           index = j
+    #           key = array[index]
+    #       exchange array[i] with array[index]
+
     for i in range(len(array) - 1):
         index = i
         key = array[index]
