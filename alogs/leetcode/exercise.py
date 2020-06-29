@@ -608,6 +608,43 @@ def rob(nums):
     # f(k) = max( f(k-2) + nums[k], f(k-1) )
 
 
+# 204 Count Primes
+class Solution204:
+    """
+    Count the number of prime numbers less than a non-negative number, n.
+    Input: 10
+    Output: 4
+    Explanation: There are 4 prime numbers less than 10, they are 2, 3, 5, 7.
+    """
+    def count_primes(self, n: int):
+        if n <= 2:
+            return 0
+
+        total = 0
+        is_not_prime = 0
+
+        for i in range(3, n, 2):
+            for sqr_root in range(3, int(i ** .5) + 2):
+                if i % sqr_root == 0:
+                    is_not_prime = 1
+                    break
+            total += (1 - is_not_prime)
+            is_not_prime = 0
+        return total + 1
+
+    def count_primes(self, n: int):
+        if n == 0:
+            return 0
+
+        # Eratosthenes algorithm
+        is_prime = [1] * (n + 1)
+        is_prime[0], is_prime[1] = 0, 0
+        for i in range(2, int(n ** .5) + 1):
+            if is_prime[i]:
+                is_prime[i ** 2: n + 1: i] = [0] * len(range(i ** 2, n + 1, i))
+        return sum(is_prime[2: n])
+
+
 # Q229 Majority Element II
 class Solution229:
     """
