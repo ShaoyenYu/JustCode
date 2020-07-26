@@ -223,30 +223,69 @@ def max_subarray(nums):
 
 
 # Q62 Unique Paths **
-def uniquePaths(m, n):
+class Solution62:
     """
     A robot is located at the top-left corner of a m x n grid (marked 'Start' in the diagram below).
+
     The robot can only move either down or right at any point in time. The robot is trying to reach the bottom-right corner of the grid (marked 'Finish' in the diagram below).
+
     How many possible unique paths are there?
 
-    Args:
-        m: int
-        n: int
+    Example 1:
 
-    Returns:
-        int
+    Input: m = 3, n = 2
+    Output: 3
+    Explanation:
+    From the top-left corner, there are a total of 3 ways to reach the bottom-right corner:
+    1. Right -> Right -> Down
+    2. Right -> Down -> Right
+    3. Down -> Right -> Right
+    Example 2:
 
+    Input: m = 7, n = 3
+    Output: 28
     """
 
-    u, d = m - 1, m + n - 2
-    u = min(d - u, u)
+    def uniquePaths(self, m, n):
+        # Math Solution
+        # Note, that we need to make overall n + m - 2 steps, and exactly m - 1 of them need to be right moves and n - 1
+        # down steps. By definition this is number of combinations to choose n - 1 elements from n + m - 2.
+        u, d = m - 1, m + n - 2
+        u = min(d - u, u)
 
-    res = 1
-    for i in range(d, d - u, -1):
-        res *= i
-    for i in range(1, u + 1):
-        res /= i
-    return int(res)
+        res = 1
+        for i in range(d, d - u, -1):
+            res *= i
+        for i in range(1, u + 1):
+            res /= i
+        return int(res)
+
+    def uniquePaths(self, m, n):
+        # DP solution: paths[i][j] = paths[i - 1][j] + paths[i][j - 1]
+        cnt_paths = [[1] * n for _ in range(m)]
+        for i, j in ((i, j) for i in range(1, m) for j in range(1, n)):
+            cnt_paths[i][j] = cnt_paths[i - 1][j] + cnt_paths[i][j - 1]
+        return cnt_paths[-1][-1]
+
+    def uniquePaths(self, m, n):
+        # recursion
+        if m == 1 or n == 1:
+            return 1
+        return self.uniquePaths(m - 1, n) + self.uniquePaths(m, n - 1)
+
+    def uniquePaths(self, m, n):
+        # recursion with optimization by using cache
+        return self._unique_path(m, n, {})
+
+    def _unique_path(self, m, n, cache):
+        if m == 1 or n == 1:
+            return 1
+        key = min(m, n), max(m, n)
+        if key in cache:
+            s = cache[key]
+        else:
+            s = cache.setdefault(key, self._unique_path(m - 1, n, cache) + self._unique_path(m, n - 1, cache))
+        return s
 
 
 # Q67 Add Binary *
@@ -267,6 +306,65 @@ def addBinary(a, b):
     """
 
     return bin(int(a, 2) + int(b, 2))[2:]
+
+
+class Solution70:
+    """
+    You are climbing a stair case. It takes n steps to reach to the top.
+
+    Each time you can either climb 1 or 2 steps. In how many distinct ways can you climb to the top?
+
+    Example 1:
+
+    Input: 2
+    Output: 2
+    Explanation: There are two ways to climb to the top.
+    1. 1 step + 1 step
+    2. 2 steps
+    Example 2:
+
+    Input: 3
+    Output: 3
+    Explanation: There are three ways to climb to the top.
+    1. 1 step + 1 step + 1 step
+    2. 1 step + 2 steps
+    3. 2 steps + 1 step
+
+
+    Constraints:
+
+    1 <= n <= 45
+    """
+    def climbStairs(self, n: int) -> int:
+        # O(n) space
+        if n <= 1:
+            return 1
+        f = [0 for _ in range(n + 1)]
+        f[0] = f[1] = 1
+        for i in range(2, n + 1):
+            f[i] = f[i - 1] + f[i - 2]
+        return f[n]
+
+    def climbStairs(self, n: int) -> int:
+        # O(1) space
+        cur, last_one_step, last_two_step = 0, 1, 1
+        for i in range(2, n + 1):
+            cur = last_one_step + last_two_step
+            last_two_step = last_one_step
+            last_one_step = cur
+        return cur
+
+    def climbStairs(self, n: int) -> int:
+        def _climbStairs(n, cache=None):
+            # with cache
+            if n in cache:
+                return cache[n]
+            if n <= 1:
+                return 1
+            cache[n] = _climbStairs(n - 1, cache) + _climbStairs(n - 2, cache)
+            return cache[n]
+
+        return _climbStairs(n, {})
 
 
 # Q100 Same Tree *
@@ -536,7 +634,7 @@ class MinStack:
 
 
 # Q169 Majority Element
-class Solution169_1:
+class Solution169:
     """
     Given an array of size n, find the majority element. The majority element is the element that appears more than ⌊ n/2 ⌋ times.
 
@@ -551,18 +649,17 @@ class Solution169_1:
     Input: [2,2,1,1,1,2,2]
     Output: 2
     """
+
     def majorityElement(self, nums: List[int]) -> int:
-                quotient, remainer = divmod(len(nums), 2)
-                min_times = quotient + int(bool(remainer))
-                appearance = {}
-                for num in nums:
-                    appearance[num] = appearance.setdefault(num, 0) + 1
+        quotient, remainer = divmod(len(nums), 2)
+        min_times = quotient + int(bool(remainer))
+        appearance = {}
+        for num in nums:
+            appearance[num] = appearance.setdefault(num, 0) + 1
 
-                    if appearance[num] == min_times:
-                        return num
+            if appearance[num] == min_times:
+                return num
 
-
-class Solution169_2:
     def majorityElement(self, nums: List[int]) -> int:
         # use Boyer-Moore majority vote algorithm
         i, cur = 0, nums[0]
@@ -616,6 +713,7 @@ class Solution204:
     Output: 4
     Explanation: There are 4 prime numbers less than 10, they are 2, 3, 5, 7.
     """
+
     def count_primes(self, n: int):
         if n <= 2:
             return 0
@@ -908,8 +1006,9 @@ class Solution804_1:
     words[i] will only consist of lowercase letters.
     """
 
-    morses_az = [".-", "-...", "-.-.", "-..", ".", "..-.", "--.", "....", "..", ".---", "-.-", ".-..", "--", "-.", "---",
-             ".--.", "--.-", ".-.", "...", "-", "..-", "...-", ".--", "-..-", "-.--", "--.."]
+    morses_az = [".-", "-...", "-.-.", "-..", ".", "..-.", "--.", "....", "..", ".---", "-.-", ".-..", "--", "-.",
+                 "---",
+                 ".--.", "--.-", ".-.", "...", "-", "..-", "...-", ".--", "-..-", "-.--", "--.."]
 
     def uniqueMorseRepresentations(self, words):
         """
@@ -962,3 +1061,44 @@ class Solution804_2:
             elif len(mo) == len(remain):
                 if mo == remain:
                     self.cnt += 1
+
+
+class Solution1310:
+    """
+    Given the array arr of positive integers and the array queries where queries[i] = [Li, Ri], for each query i compute the XOR of elements from Li to Ri (that is, arr[Li] xor arr[Li+1] xor ... xor arr[Ri] ). Return an array containing the result for the given queries.
+
+    Example 1:
+
+    Input: arr = [1,3,4,8], queries = [[0,1],[1,2],[0,3],[3,3]]
+    Output: [2,7,14,8]
+    Explanation:
+    The binary representation of the elements in the array are:
+    1 = 0001
+    3 = 0011
+    4 = 0100
+    8 = 1000
+    The XOR values for queries are:
+    [0,1] = 1 xor 3 = 2
+    [1,2] = 3 xor 4 = 7
+    [0,3] = 1 xor 3 xor 4 xor 8 = 14
+    [3,3] = 8
+    Example 2:
+
+    Input: arr = [4,8,2,10], queries = [[2,3],[1,3],[0,0],[0,3]]
+    Output: [8,0,4,4]
+
+    Constraints:
+
+    1 <= arr.length <= 3 * 10^4
+    1 <= arr[i] <= 10^9
+    1 <= queries.length <= 3 * 10^4
+    queries[i].length == 2
+    0 <= queries[i][0] <= queries[i][1] < arr.length
+    """
+
+    def xor_queries(self, arr: List[int], queries: List[List[int]]) -> List[int]:
+        accu, cur = [0], 0
+        for x in arr:
+            cur ^= x
+            accu.append(cur)
+        return [accu[r + 1] ^ accu[l] for (l, r) in queries]
