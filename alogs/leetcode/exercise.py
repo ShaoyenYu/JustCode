@@ -288,6 +288,57 @@ class Solution62:
         return s
 
 
+# Q63 Unique Paths **
+class Solution63:
+    """
+    A robot is located at the top-left corner of a m x n grid (marked 'Start' in the diagram below).
+
+    The robot can only move either down or right at any point in time. The robot is trying to reach the bottom-right corner of the grid (marked 'Finish' in the diagram below).
+
+    Now consider if some obstacles are added to the grids. How many unique paths would there be?
+
+    An obstacle and empty space is marked as 1 and 0 respectively in the grid.
+
+    Note: m and n will be at most 100.
+    Example 1:
+
+    Input:
+    [
+      [0,0,0],
+      [0,1,0],
+      [0,0,0]
+    ]
+    Output: 2
+    Explanation:
+    There is one obstacle in the middle of the 3x3 grid above.
+    There are two ways to reach the bottom-right corner:
+    1. Right -> Right -> Down -> Down
+    2. Down -> Down -> Right -> Right
+    """
+
+    def uniquePathsWithObstacles(self, obstacleGrid: List[List[int]]) -> int:
+        if len(obstacleGrid) == 0 or len(obstacleGrid[0]) == 0 or obstacleGrid[0] == 1:
+            return 0
+
+        width, height = len(obstacleGrid[0]), len(obstacleGrid)
+        counts = [[1 for _ in range(width)] for _ in range(height)]
+
+        for h in range(height):
+            for w in range(width):
+                if obstacleGrid[h][w] == 1:
+                    counts[h][w] = 0
+
+        for w in range(1, width):
+            counts[0][w] = counts[0][w - 1] if obstacleGrid[0][w] != 1 else 0
+        for h in range(1, height):
+            counts[h][0] = counts[h - 1][0] if obstacleGrid[h][0] != 1 else 0
+
+        for h in range(1, height):
+            for w in range(1, width):
+                counts[h][w] = counts[h - 1][w] + counts[h][w - 1] if counts[h][w] != 0 else 0
+        return counts[-1][-1]
+
+
 # Q67 Add Binary *
 def addBinary(a, b):
     """
