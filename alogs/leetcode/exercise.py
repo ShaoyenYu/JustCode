@@ -7,109 +7,6 @@ def longest_palindromine():
     pass
 
 
-# Q9 Palindrome Number *
-def is_palindrome(x):
-    """
-    Determine whether an integer is a palindrome. Do this without extra space.
-    Some hints:
-    Could negative integers be palindromes? (ie, -1)
-
-    If you are thinking of converting the integer to string, note the restriction of using extra space.
-
-    You could also try reversing an integer. However, if you have solved the problem "Reverse Integer", you know that the reversed integer might overflow. How would you handle such case?
-
-    There is a more generic way of solving this problem.
-
-    Args:
-        x: integer
-
-    Returns:
-        bool
-    """
-
-    # # Method 1
-    # if x < 0:
-    #     return False
-    #
-    # l = []
-    # is_palindrome = True
-    #
-    # while True:
-    #     quotient, remainder = divmod(x, 10)
-    #     l.append(remainder)
-    #     x = quotient
-    #     if quotient == 0:
-    #         break
-    #
-    # L = len(l)
-    # for i in range(L):
-    #     lidx, ridx = i, L - i - 1
-    #     if l[lidx] != l[ridx]:
-    #         is_palindrome = False
-    #         break
-    #
-    #     if ridx - lidx <= 1:
-    #         break
-    #
-    # return is_palindrome
-
-    # # Method 2
-    if x < 0:
-        return False
-
-    if x / 10 == 0:
-        return True
-
-    if x % 10 == 0:
-        return False
-
-    h = x
-    l = 0
-    while h > l:
-        print(f"l:{l}, h:{h}")
-        l *= 10
-        l += h % 10
-        if l == h:
-            return True
-        h /= 10
-    return h == l
-
-
-# Q11 Container With Most Water **
-def max_area(height):
-    """
-    Given n non-negative integers a1, a2, ..., an, where each represents a point at coordinate (i, ai). n vertical lines are drawn such that the two endpoints of line i is at (i, ai) and (i, 0). Find two lines, which together with x-axis forms a container, such that the container contains the most water.
-    Note: You may not slant the container and n is at least 2.
-
-    Args:
-        height: list[int]
-
-    Returns:
-        int
-
-    """
-
-    points = list(enumerate(height))
-    max_area = 0
-    l, r = 0, len(points) - 1
-
-    while True:
-        shorter_side = l if points[l][1] <= points[r][1] else r
-        area = (points[r][0] - points[l][0]) * points[shorter_side][1]
-        if area > max_area:
-            max_area = area
-
-        if l == shorter_side:
-            l += 1
-        else:
-            r -= 1
-
-        if l == r:
-            break
-
-    return max_area
-
-
 # Q13 Roman to Integer
 class Solution13:
     """
@@ -1025,6 +922,40 @@ class Solution643:
             max_total = max(current, max_total)
 
         return max_total / k
+
+
+# Q746 Min Cost Climbing Stairs
+class Solution746:
+    """
+    On a staircase, the i-th step has some non-negative cost cost[i] assigned (0 indexed).
+
+    Once you pay the cost, you can either climb one or two steps. You need to find minimum cost to reach the top of the floor, and you can either start from the step with index 0, or the step with index 1.
+
+    Example 1:
+    Input: cost = [10, 15, 20]
+    Output: 15
+    Explanation: Cheapest is start on cost[1], pay that cost and go to the top.
+    Example 2:
+    Input: cost = [1, 100, 1, 1, 1, 100, 1, 1, 100, 1]
+    Output: 6
+    Explanation: Cheapest is start on cost[0], and only step on 1s, skipping cost[3].
+    Note:
+    cost will have a length in the range [2, 1000].
+    Every cost[i] will be an integer in the range [0, 999].
+    """
+
+    def minCostClimbingStairs(self, cost: List[int]) -> int:
+        dp = [0] * len(cost)
+        dp[0], dp[1] = cost[0], cost[1]
+
+        for i in range(2, len(dp)):
+            dp[i] = cost[i] + min(dp[i - 1], dp[i - 2])
+            print(dp)
+        return min(dp[len(dp) - 1], dp[len(dp) - 2])
+
+    def minCostClimbingStairs(self, cost: List[int]) -> int:
+
+        pass
 
 
 # Q804 Unique Morse Code Words
