@@ -19,6 +19,17 @@ def insertion_sort(array, ascending=True):
         array[j + 1] = key
 
 
+def insertion_sort(a):
+    for j in range(1, len(a)):
+        key = a[j]
+        for i in range(j - 1, -1, -1):
+            if a[i] <= key:
+                i += 1
+                break
+            a[i + 1] = a[i]
+        a[i] = key
+
+
 def bubble_sort(array, ascending=True):
     # Pseudo Code
     # BubbleSort(A)
@@ -58,38 +69,38 @@ def selection_sort(array):
 
 
 def merge_sort(array):
-    def _merge(array, p, q, r):
-        left = [array[idx] for idx in range(p, q + 1)]
-        right = [array[idx] for idx in range(q + 1, r + 1)]
+    def _merge(array_, p_, q_, r_):
+        left = [array_[idx] for idx in range(p_, q_ + 1)]
+        right = [array_[idx] for idx in range(q_ + 1, r_ + 1)]
 
-        n1, n2 = q - p + 1, r - q
+        n1, n2 = q_ - p_ + 1, r_ - q_
         lidx, ridx = 0, 0
-        k = p
+        k = p_
         while (lidx < n1) and (ridx < n2):
             if left[lidx] <= right[ridx]:
-                array[k] = left[lidx]
+                array_[k] = left[lidx]
                 lidx += 1
             else:
-                array[k] = right[ridx]
+                array_[k] = right[ridx]
                 ridx += 1
             k += 1
 
         # directly copy remain subarray to original array
         while lidx < n1:
-            array[k] = left[lidx]
+            array_[k] = left[lidx]
             lidx += 1
             k += 1
         while ridx < n2:
-            array[k] = right[ridx]
+            array_[k] = right[ridx]
             ridx += 1
             k += 1
 
-    def _merge_sort(array, p, r):
-        if p < r:
-            q = (p + r) >> 1
-            _merge_sort(array, p, q)
-            _merge_sort(array, q + 1, r)
-            _merge(array, p, q, r)
+    def _merge_sort(array_, p_, r_):
+        if p_ < r_:
+            q = (p_ + r_) >> 1
+            _merge_sort(array_, p_, q)
+            _merge_sort(array_, q + 1, r_)
+            _merge(array_, p_, q, r_)
 
     p, r = 0, len(array) - 1
     _merge_sort(array, p, r)
