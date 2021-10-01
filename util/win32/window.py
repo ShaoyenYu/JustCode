@@ -1,5 +1,8 @@
 import time
+from typing import Optional
 
+import cv2 as cv
+import numpy as np
 import pyautogui as pag
 import win32con
 import win32gui
@@ -8,63 +11,110 @@ from PIL import Image
 
 from util.win32.types.datatypes import Rect
 
+# Get type PyCDC
+hwDC = win32gui.CreateDC("DISPLAY", None, None)
+DC = win32ui.CreateDCFromHandle(hwDC)
+T_PyCDC = type(DC)
+DC.DeleteDC()
+del hwDC, DC
 
-def _create_data_bitmap(x, y, width_to_cap, height_to_cap, DC, cDC=None):
+
+def create_data_bitmap(x, y, width, height, DC: T_PyCDC, cDC: T_PyCDC = None):
+    """
+
+    Args:
+        x: int
+            left-top coordinate
+        y: int
+            left-top coordinate
+        width: int
+            width of rectangle to capture
+        height: int
+            height to rectangle to capture
+        DC: PyCDC
+            source device context
+        cDC: PyCDC
+            compatible device context to copy bit data into;
+
+    Returns:
+
+    """
     if cDC is None:
         cDC = DC.CreateCompatibleDC()
 
-    data_bitmap = win32ui.CreateBitmap()  # create monochrome bitmaps
-    data_bitmap.CreateCompatibleBitmap(DC, width_to_cap, height_to_cap)  # create color bitmaps
+    data_bitmap = win32ui.CreateBitmap()  # create monochrome bitmaps, should call DeleteObject when it's no longer used
+    data_bitmap.CreateCompatibleBitmap(DC, width, height)  # create color bitmaps
 
     # The SelectObject function selects an object into the specified device context (DC).
     # The new object replaces the previous object of the same type.
     cDC.SelectObject(data_bitmap)
-    cDC.BitBlt((0, 0), (width_to_cap, height_to_cap), DC, (x, y), win32con.SRCCOPY)
+    cDC.BitBlt((0, 0), (width, height), DC, (x, y), win32con.SRCCOPY)
 
     return data_bitmap
 
 
-def take_screenshot(src_dc, dst_dc, width, height, x=0, y=0, save_path=None, release=True) -> Image:
+def image_from_bitmap(bitmap, form="array"):
+    """
+    Decode image from bitarray, the result can be formed as PIL Image or an Numpy array.
+
+    Args:
+        bitmap:
+        form: str, optional {"image", "array"}
+
+    Returns:
+
+    """
+    bitmap_w, bitmap_height = ((_ := bitmap.GetInfo())[k] for k in ("bmWidth", "bmHeight"))
+
+    if form == "array":
+        # BGRX to RGB
+        image_array = cv.cvtColor(
+            np.frombuffer(bitmap.GetBitmapBits(True), dtype="uint8").reshape(bitmap_height, bitmap_w, 4),
+            cv.COLOR_BGR2RGB,
+        )
+        return image_array
+
+    elif form == "image":
+        image = Image.frombuffer(
+            "RGB", (bitmap_w, bitmap_height), bitmap.GetBitmapBits(True), 'raw', *('BGRX', 0, 1)
+        )
+        return image
+    raise NotImplementedError
+
+
+def screenshot(src_dc, dst_dc, x, y, width, height, form="array", save_path=None) -> Image:
     """
 
     Args:
         src_dc:
         dst_dc:
+        x: int
+            left-top x coordinate of source
+        y: int
+            left-top y coordinate of source
         width: int
             width to capture
         height: int
             height to capture
-        x:
-            left-top x coordinate of source
-        y:
-            left-top y coordinate of source
+        form: str, optional {"array", "image"}
         save_path: str
-        release: bool, default True
-            whether to release `src_dc`, `dst_dc`
 
     Returns:
 
     """
 
-    data_bitmap = _create_data_bitmap(x, y, width, height, src_dc, dst_dc)
-    bmpinfo = data_bitmap.GetInfo()
+    data_bitmap = create_data_bitmap(x, y, width, height, src_dc, dst_dc)  # create bitmap
 
-    image = Image.frombuffer(
-        "RGB", (bmpinfo['bmWidth'], bmpinfo['bmHeight']), data_bitmap.GetBitmapBits(True),
-        'raw', *('BGRX', 0, 1)
-    )
+    image = image_from_bitmap(data_bitmap, form=form)  # generate image from bitmap
 
     if save_path:
         data_bitmap.SaveBitmapFile(dst_dc, save_path)
 
-    if release:
-        src_dc.DeleteDC()
-        dst_dc.DeleteDC()
-    win32gui.DeleteObject(data_bitmap.GetHandle())
+    win32gui.DeleteObject(data_bitmap.GetHandle())  # release bitmap after using
     return image
 
 
-def take_screenshot_by_hwnd(hwnd, width_to_cap, height_to_cap, x=0, y=0, save_path=None) -> Image:
+def screenshot_by_hwnd(hwnd, x, y, width, height, form="array", save_path=None) -> Image:
     """
     To store an image temporarily, your application must call CreateCompatibleDC to create a DC that is compatible with
     the current window DC. After you create a compatible DC, you create a bitmap with the appropriate dimensions by
@@ -81,25 +131,26 @@ def take_screenshot_by_hwnd(hwnd, width_to_cap, height_to_cap, x=0, y=0, save_pa
 
     Args:
         hwnd:
-        width_to_cap:
-        height_to_cap:
         x:
         y:
-        dc_src:
-        dc_dest:
+        width:
+        height:
+        form:
         save_path:
 
     Returns:
 
     """
 
-    wDC = win32gui.GetWindowDC(hwnd)
-    DC = win32ui.CreateDCFromHandle(wDC)
+    hwDC = win32gui.GetWindowDC(hwnd)
+    DC = win32ui.CreateDCFromHandle(hwDC)
     cDC = DC.CreateCompatibleDC()
 
-    img = take_screenshot(DC, cDC, width_to_cap, height_to_cap, x, y, save_path, release=True)
+    img = screenshot(DC, cDC, width, height, x, y, form, save_path)
 
-    win32gui.ReleaseDC(hwnd, wDC)
+    DC.DeleteDC()
+    cDC.DeleteDC()
+    win32gui.ReleaseDC(hwnd, hwDC)
     return img
 
 
@@ -112,6 +163,9 @@ class Window:
         self.rect = self.get_wiondow_rect()
 
         # for screen-shot usage
+        self.hwDC: Optional[int] = None
+        self.DC: T_PyCDC = None
+        self.cDC: T_PyCDC = None
         self.create_dc()
 
     def get_window_text(self):
@@ -145,23 +199,40 @@ class Window:
         win32gui.SetWindowPos(self.hwnd, insert_after, x, y, cx, cy, flags)
         self.rect = self.get_wiondow_rect()
 
-    def screenshot(self, width=None, height=None, x=None, y=None, save_path=None, shift_x=0, shift_y=0):
-        return take_screenshot(
-            self.DC, self.cDC, width or self.rect.width, height or self.rect.height, (x or 0) + shift_x, (y or 0) + shift_y,
-            save_path, release=False
+    def screenshot(self, x=0, y=0, width=None, height=None, form="array", save_path=None):
+        return screenshot(
+            self.DC, self.cDC,
+            x, y, width or self.rect.width, height or self.rect.height,
+            form,
+            save_path
         )
 
     def create_dc(self):
-        self.wDC = win32gui.GetWindowDC(self.hwnd)
-        self.DC = win32ui.CreateDCFromHandle(self.wDC)
-        self.cDC = self.DC.CreateCompatibleDC()
+        self.hwDC = win32gui.GetWindowDC(self.hwnd)  # use ReleaseDC after calling
+        self.DC = win32ui.CreateDCFromHandle(self.hwDC)  # use DeleteDC after calling
+        self.cDC = self.DC.CreateCompatibleDC()  # use DeleteDC after calling
 
     def release_dc(self):
         self.DC.DeleteDC()
         self.cDC.DeleteDC()
-        win32gui.ReleaseDC(self.hwnd, self.wDC)
+        win32gui.ReleaseDC(self.hwnd, self.hwDC)
 
     # mouse action
+    def abs_move(self, x_y: tuple):
+        x, y = win32gui.ClientToScreen(self.hwnd, x_y)
+        pag.moveTo(x, y)
+
+    def abs_click(self, x_y: tuple, pause=None):
+        x, y = win32gui.ClientToScreen(self.hwnd, x_y)
+        pag.click(x, y, pause=pause)
+
+    def abs_scroll(self, clicks, x_y=None, pause=.01, _pause=True):
+        if x_y is not None:
+            self.abs_click(x_y)
+        unit = 1 if clicks > 0 else -1
+        for _ in range(abs(clicks)):
+            pag.scroll(unit, pause=pause, _pause=_pause)
+
     def drag_to(self, from_, to, duration, sleep_down=0, sleep_up=0):
         pag.moveTo(self.rect.left + from_[0], self.rect.top + from_[1])
         pag.mouseDown()
@@ -173,7 +244,6 @@ class Window:
         if sleep_up:
             time.sleep(sleep_up)
         pag.mouseUp()
-        # pag.dragTo(self.rect.left + to[0], self.rect.top + to[1], duration, mouseDownUp=True)
 
     def __repr__(self):
         return f"{self.get_window_text()}[{self.hwnd}]"

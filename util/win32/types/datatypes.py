@@ -18,6 +18,7 @@ class Rect:
         else:
             self.left = left
             self.top = top
+
         if right_bottom:
             self.right, self.bottom = right_bottom
         else:
@@ -32,4 +33,4 @@ class Rect:
         return iter((self.left, self.top, self.right, self.bottom))
 
     def __repr__(self):
-        return f"{self.left, self.top, self.right, self.bottom}"
+        return f"Left: {self.left}, Top: {self.top}, Right: {self.right}, Bottom: {self.bottom}"
