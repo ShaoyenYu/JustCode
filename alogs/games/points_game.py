@@ -25,8 +25,8 @@ class PointsGame1(Solution):
             to_prints = {
                 "n": f"{str(int(n)):3}",
                 "-": "-" * 80,
-                "nums": f"{str(list(cls.nums)):38}",
-                "exps": f"{str(list(cls.ress)):25}",
+                "nums": f"{str(list(cls.nums)):>38}",
+                "exps": f"{str(list(cls.ress)):>25}",
             }
             to_prints = "|  ".join((f"{k}: {v}" for k, v in to_prints.items()))
             print(to_prints)
@@ -52,15 +52,15 @@ class PointsGame1(Solution):
                 ################################################################
                 # stack trace
                 to_prints = {
-                    "n": f"{str(int(n)):3}",
-                    "i": f"{str(int(i)):3}",
-                    "j": f"{str(int(j)):3}",
-                    "a": f"{str(a)[:4]:6}",
-                    "b": f"{str(b)[:4]:6}",
-                    "expa": f"{str(expa):13}",
-                    "expb": f"{str(expb):13}",
-                    "nums": f"{str(list(cls.nums)):38}",
-                    "exps": f"{str(list(cls.ress)):25}",
+                    "n": f"{str(int(n)):>3}",
+                    "i": f"{str(int(i)):>3}",
+                    "j": f"{str(int(j)):>3}",
+                    "a": f"{str(a)[:4]:>6}",
+                    "b": f"{str(b)[:4]:>6}",
+                    "expa": f"{str(expa):>13}",
+                    "expb": f"{str(expb):>13}",
+                    "nums": f"{str(list(cls.nums)):>38}",
+                    "exps": f"{str(list(cls.ress)):>25}",
                 }
                 to_prints = "|  ".join((f"{k}: {v}" for k, v in to_prints.items()))
                 print(to_prints)
@@ -102,15 +102,15 @@ class PointsGame1(Solution):
                 ################################################################
                 # stack trace
                 to_prints = {
-                    "n": f"{str(int(n)):3}",
-                    "i": f"{str(int(i)):3}",
-                    "j": f"{str(int(j)):3}",
-                    "a": f"{str(a)[:4]:6}",
-                    "b": f"{str(b)[:4]:6}",
-                    "expa": f"{str(expa):13}",
-                    "expb": f"{str(expb):13}",
-                    "nums": f"{str(list(cls.nums)):38}",
-                    "exps": f"{str(list(cls.ress)):25}",
+                    "n": f"{str(int(n)):>3}",
+                    "i": f"{str(int(i)):>3}",
+                    "j": f"{str(int(j)):>3}",
+                    "a": f"{str(a)[:4]:>6}",
+                    "b": f"{str(b)[:4]:>6}",
+                    "expa": f"{str(expa):>13}",
+                    "expb": f"{str(expb):>13}",
+                    "nums": f"{str(list(cls.nums)):>38}",
+                    "exps": f"{str(list(cls.ress)):>25}",
                 }
                 to_prints = "|  ".join((f"{k}: {v}" for k, v in to_prints.items()))
                 print(to_prints)
