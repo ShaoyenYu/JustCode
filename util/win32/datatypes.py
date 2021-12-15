@@ -1,9 +1,10 @@
 class Point:
-    __slots__ = ("x", "y")
+    __slots__ = ("x", "y", "rgb")
 
-    def __init__(self, x, y):
+    def __init__(self, x, y, rgb=None):
         self.x = x
         self.y = y
+        self.rgb = rgb
 
     def __iter__(self):
         return iter((self.x, self.y))
@@ -12,14 +13,14 @@ class Point:
 class Rect:
     __slots__ = ("left", "top", "right", "bottom", "width", "height", "center")
 
-    def __init__(self, left=None, top=None, right=None, bottom=None, left_up=None, right_bottom=None):
-        if left_up:
-            self.left, self.top = left_up
+    def __init__(self, left=None, top=None, right=None, bottom=None, left_top=None, right_bottom=None):
+        if left_top is not None:
+            self.left, self.top = left_top
         else:
             self.left = left
             self.top = top
 
-        if right_bottom:
+        if right_bottom is not None:
             self.right, self.bottom = right_bottom
         else:
             self.right = right
