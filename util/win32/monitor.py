@@ -2,12 +2,8 @@ import ctypes
 from ctypes import windll
 from typing import List, Tuple, Dict
 
-import win32api
-import win32con
-import win32gui
-import win32ui
-
-from util.win32.types.datatypes import Rect
+from util.win32 import win32api, win32gui, win32con, win32ui
+from util.win32.datatypes import Rect
 
 __ProcessDpiAwareness = 0
 __HAS_INITIALIZED = False
@@ -66,6 +62,32 @@ def get_monitors():
 
 
 def set_process_dpi_awareness(process_dpi_awareness: int, silent=False):
+    """
+    Args:
+        process_dpi_awareness: int, default 0
+            PROCESS_DPI_UNAWARE = 0,
+            /*  DPI unaware. This app does not scale for DPI changes and is
+                always assumed to have a scale factor of 100% (96 DPI). It
+                will be automatically scaled by the system on any other DPI
+                setting. */
+
+            PROCESS_SYSTEM_DPI_AWARE = 1,
+            /*  System DPI aware. This app does not scale for DPI changes.
+                It will query for the DPI once and use that value for the
+                lifetime of the app. If the DPI changes, the app will not
+                adjust to the new DPI value. It will be automatically scaled
+                up or down by the system when the DPI changes from the system
+                value. */
+
+            PROCESS_PER_MONITOR_DPI_AWARE = 2
+            /*  Per monitor DPI aware. This app checks for the DPI when it is
+                created and adjusts the scale factor whenever the DPI changes.
+                These applications are not automatically scaled by the system. */
+        silent:
+
+    Returns:
+
+    """
     from warnings import warn
     global __HAS_INITIALIZED, __ProcessDpiAwareness
 
