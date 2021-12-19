@@ -1,25 +1,31 @@
-import time
 from typing import Optional
 
 import cv2 as cv
 import numpy as np
-import pyautogui as pag
-import win32con
-import win32gui
-import win32ui
+import pywintypes
 from PIL import Image
+from matplotlib import pyplot as plt
 
-from util.win32.types.datatypes import Rect
-
-# Get type PyCDC
-hwDC = win32gui.CreateDC("DISPLAY", None, None)
-DC = win32ui.CreateDCFromHandle(hwDC)
-T_PyCDC = type(DC)
-DC.DeleteDC()
-del hwDC, DC
+from util.win32 import T_PyCDC, win32api, win32gui, win32con, win32ui
+from util.win32.datatypes import Rect
 
 
-def create_data_bitmap(x, y, width, height, DC: T_PyCDC, cDC: T_PyCDC = None):
+def parse_rbg_int2tuple(rgb_int: int):
+    return rgb_int & 0xff, (rgb_int >> 8) & 0xff, (rgb_int >> 16) & 0xff
+
+
+def parse_rbg_tuple2int(rgb_tuple: tuple):
+    return rgb_tuple[0] | rgb_tuple[1] << 8 | rgb_tuple[2] << 16
+
+
+def get_pixel(hwnd_dc: int, x, y, as_int=False):
+    rgb_int = win32gui.GetPixel(hwnd_dc, x, y)
+    if as_int:
+        return rgb_int
+    return parse_rbg_int2tuple(rgb_int)
+
+
+def create_data_bitmap(x, y, width, height, dc: T_PyCDC, cdc: T_PyCDC = None):
     """
 
     Args:
@@ -31,24 +37,24 @@ def create_data_bitmap(x, y, width, height, DC: T_PyCDC, cDC: T_PyCDC = None):
             width of rectangle to capture
         height: int
             height to rectangle to capture
-        DC: PyCDC
+        dc: PyCDC
             source device context
-        cDC: PyCDC
+        cdc: PyCDC
             compatible device context to copy bit data into;
 
     Returns:
 
     """
-    if cDC is None:
-        cDC = DC.CreateCompatibleDC()
+    if cdc is None:
+        cdc = dc.CreateCompatibleDC()
 
     data_bitmap = win32ui.CreateBitmap()  # create monochrome bitmaps, should call DeleteObject when it's no longer used
-    data_bitmap.CreateCompatibleBitmap(DC, width, height)  # create color bitmaps
+    data_bitmap.CreateCompatibleBitmap(dc, width, height)  # create color bitmaps
 
     # The SelectObject function selects an object into the specified device context (DC).
     # The new object replaces the previous object of the same type.
-    cDC.SelectObject(data_bitmap)
-    cDC.BitBlt((0, 0), (width, height), DC, (x, y), win32con.SRCCOPY)
+    cdc.SelectObject(data_bitmap)
+    cdc.BitBlt((0, 0), (width, height), dc, (x, y), win32con.SRCCOPY)
 
     return data_bitmap
 
@@ -114,6 +120,24 @@ def screenshot(src_dc, dst_dc, x, y, width, height, form="array", save_path=None
     return image
 
 
+def match_single_template(origin: np.ndarray, template: np.ndarray):
+    origin_copy = origin.copy()
+    width, height = template.shape[:2][::-1]
+
+    result = cv.matchTemplate(origin, template, cv.TM_CCORR_NORMED)
+    min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
+
+    top_left = max_loc
+    bottom_right = (top_left[0] + width, top_left[1] + height)
+    cv.rectangle(origin_copy, top_left, bottom_right, (255, 0, 0), 2)
+
+    plt.imshow(origin)
+    plt.show()
+    plt.imshow(origin_copy)
+    plt.show()
+    return min_val, max_val, min_loc, max_loc
+
+
 def screenshot_by_hwnd(hwnd, x, y, width, height, form="array", save_path=None) -> Image:
     """
     To store an image temporarily, your application must call CreateCompatibleDC to create a DC that is compatible with
@@ -154,25 +178,91 @@ def screenshot_by_hwnd(hwnd, x, y, width, height, form="array", save_path=None) 
     return img
 
 
-class Window:
-    def __init__(self, window_name=None, window_pos=None):
-        if window_name:
-            self.hwnd = win32gui.FindWindow(0, window_name)
-        if window_pos:
-            self.hwnd = win32gui.WindowFromPoint(window_pos)
-        self.rect = self.get_wiondow_rect()
+class ScreenUtilityMixin:
+    def __init__(self, hwnd):
+        self.hwnd = hwnd
+        self.hw_dc: Optional[int] = None
+        self.dc: T_PyCDC = None
+        self.cdc: T_PyCDC = None
 
-        # for screen-shot usage
-        self.hwDC: Optional[int] = None
-        self.DC: T_PyCDC = None
-        self.cDC: T_PyCDC = None
+    def create_dc(self):
+        self.hw_dc = win32gui.GetWindowDC(self.hwnd)  # use ReleaseDC after calling
+        self.dc = win32ui.CreateDCFromHandle(self.hw_dc)  # use DeleteDC after calling
+        self.cdc = self.dc.CreateCompatibleDC()  # use DeleteDC after calling
+
+    def release_dc(self):
+        self.dc.DeleteDC()
+        self.cdc.DeleteDC()
+        win32gui.ReleaseDC(self.hwnd, self.hw_dc)
+
+    def screenshot(self, x=0, y=0, width=None, height=None, form="array", save_path=None):
         self.create_dc()
+        result = screenshot(self.dc, self.cdc, x, y, width, height, form, save_path)
+        self.release_dc()
+        return result
+
+    def get_pixel(self, x, y, as_int=False):
+        """
+
+        Args:
+            x: int
+            y: int
+            as_int: bool, default False
+                If true, return rgb as an integer, of which the binary is 24-bit.
+
+        Returns:
+
+        """
+        hw_dc = win32gui.GetWindowDC(self.hwnd)
+        try:
+            rgb = get_pixel(hw_dc, x, y, as_int)
+        except pywintypes.error:  # this error occurs when using ALT + TAB, don't know how to fix.
+            print("failed to get pixel, retrying...")
+            win32gui.ReleaseDC(self.hwnd, hw_dc)
+            rgb = self.get_pixel(x, y, as_int)
+        else:
+            win32gui.ReleaseDC(self.hwnd, hw_dc)
+        return rgb
+
+
+class ControllerMixin:
+    def __init__(self, hwnd):
+        self.hwnd = hwnd
+
+    def left_click(self, x_y: tuple):
+        pos = win32api.MAKELONG(*x_y)
+        win32api.PostMessage(self.hwnd, win32con.WM_LBUTTONDOWN, win32con.MK_LBUTTON, pos)
+        win32api.PostMessage(self.hwnd, win32con.WM_LBUTTONUP, 0, pos)
+
+
+class Window(ScreenUtilityMixin, ControllerMixin):
+    def __init__(self, **kwargs):
+        """
+
+        Args:
+            **kwargs:
+                window_hwnd: int
+                window_name: str
+                window_pos: tuple[int, int]
+        """
+        if (window_handle := kwargs.get("window_hwnd")) is not None:
+            self.hwnd = window_handle
+        elif (window_name := kwargs.get("window_name")) is not None:
+            self.hwnd = win32gui.FindWindow(0, window_name)
+        elif (window_pos := kwargs.get("window_pos")) is not None:
+            self.hwnd = win32gui.WindowFromPoint(window_pos)
+        self.rect = None
+        self.get_window_rect()
+
+        ScreenUtilityMixin.__init__(self, self.hwnd)
+        ControllerMixin.__init__(self, self.hwnd)
 
     def get_window_text(self):
         return win32gui.GetWindowText(self.hwnd)
 
-    def get_wiondow_rect(self):
-        return Rect(*win32gui.GetWindowRect(self.hwnd))
+    def get_window_rect(self):
+        self.rect = Rect(*win32gui.GetWindowRect(self.hwnd))
+        return self.rect
 
     def set_window_pos(self, insert_after, x, y, cx, cy, flags):
         """
@@ -197,53 +287,15 @@ class Window:
         """
 
         win32gui.SetWindowPos(self.hwnd, insert_after, x, y, cx, cy, flags)
-        self.rect = self.get_wiondow_rect()
+        self.rect = self.get_window_rect()
 
     def screenshot(self, x=0, y=0, width=None, height=None, form="array", save_path=None):
-        return screenshot(
-            self.DC, self.cDC,
+        return super().screenshot(
             x, y, width or self.rect.width, height or self.rect.height,
             form,
             save_path
         )
 
-    def create_dc(self):
-        self.hwDC = win32gui.GetWindowDC(self.hwnd)  # use ReleaseDC after calling
-        self.DC = win32ui.CreateDCFromHandle(self.hwDC)  # use DeleteDC after calling
-        self.cDC = self.DC.CreateCompatibleDC()  # use DeleteDC after calling
-
-    def release_dc(self):
-        self.DC.DeleteDC()
-        self.cDC.DeleteDC()
-        win32gui.ReleaseDC(self.hwnd, self.hwDC)
-
-    # mouse action
-    def abs_move(self, x_y: tuple):
-        x, y = win32gui.ClientToScreen(self.hwnd, x_y)
-        pag.moveTo(x, y)
-
-    def abs_click(self, x_y: tuple, pause=None):
-        x, y = win32gui.ClientToScreen(self.hwnd, x_y)
-        pag.click(x, y, pause=pause)
-
-    def abs_scroll(self, clicks, x_y=None, pause=.01, _pause=True):
-        if x_y is not None:
-            self.abs_click(x_y)
-        unit = 1 if clicks > 0 else -1
-        for _ in range(abs(clicks)):
-            pag.scroll(unit, pause=pause, _pause=_pause)
-
-    def drag_to(self, from_, to, duration, sleep_down=0, sleep_up=0):
-        pag.moveTo(self.rect.left + from_[0], self.rect.top + from_[1])
-        pag.mouseDown()
-        if sleep_down:
-            time.sleep(sleep_down)
-
-        pag.moveTo(self.rect.left + to[0], self.rect.top + to[1], duration)
-
-        if sleep_up:
-            time.sleep(sleep_up)
-        pag.mouseUp()
-
     def __repr__(self):
-        return f"{self.get_window_text()}[{self.hwnd}]"
+        rect = self.get_window_rect()
+        return f"{self.get_window_text()}[{self.hwnd}, {rect.width:<4}*{rect.height:<4}]"
