@@ -1,3 +1,4 @@
+import time
 from typing import Optional
 
 import cv2 as cv
@@ -219,6 +220,7 @@ class ScreenUtilityMixin:
         except pywintypes.error:  # this error occurs when using ALT + TAB, don't know how to fix.
             print("failed to get pixel, retrying...")
             win32gui.ReleaseDC(self.hwnd, hw_dc)
+            time.sleep(.1)
             rgb = self.get_pixel(x, y, as_int)
         else:
             win32gui.ReleaseDC(self.hwnd, hw_dc)
