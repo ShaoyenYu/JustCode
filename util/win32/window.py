@@ -1,11 +1,10 @@
 import time
-from typing import Optional
+from typing import Optional, Tuple
 
 import cv2 as cv
 import numpy as np
 import pywintypes
 from PIL import Image
-from matplotlib import pyplot as plt
 
 from util.win32 import T_PyCDC, win32api, win32gui, win32con, win32ui
 from util.win32.datatypes import Rect
@@ -121,24 +120,6 @@ def screenshot(src_dc, dst_dc, x, y, width, height, form="array", save_path=None
     return image
 
 
-def match_single_template(origin: np.ndarray, template: np.ndarray):
-    origin_copy = origin.copy()
-    width, height = template.shape[:2][::-1]
-
-    result = cv.matchTemplate(origin, template, cv.TM_CCORR_NORMED)
-    min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
-
-    top_left = max_loc
-    bottom_right = (top_left[0] + width, top_left[1] + height)
-    cv.rectangle(origin_copy, top_left, bottom_right, (255, 0, 0), 2)
-
-    plt.imshow(origin)
-    plt.show()
-    plt.imshow(origin_copy)
-    plt.show()
-    return min_val, max_val, min_loc, max_loc
-
-
 def screenshot_by_hwnd(hwnd, x, y, width, height, form="array", save_path=None) -> Image:
     """
     To store an image temporarily, your application must call CreateCompatibleDC to create a DC that is compatible with
@@ -231,10 +212,13 @@ class ControllerMixin:
     def __init__(self, hwnd):
         self.hwnd = hwnd
 
-    def left_click(self, x_y: tuple):
-        pos = win32api.MAKELONG(*x_y)
+    def left_click(self, coordinate: Tuple[int, int], sleep=0):
+        pos = win32api.MAKELONG(*coordinate)
         win32api.PostMessage(self.hwnd, win32con.WM_LBUTTONDOWN, win32con.MK_LBUTTON, pos)
         win32api.PostMessage(self.hwnd, win32con.WM_LBUTTONUP, 0, pos)
+
+        if sleep > 0:
+            time.sleep(sleep)
 
 
 class Window(ScreenUtilityMixin, ControllerMixin):
