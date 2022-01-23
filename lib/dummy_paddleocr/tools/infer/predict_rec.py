@@ -16,3 +16,6 @@ class CustomTextRecognizer(TextRecognizer):
                 "valid_chars": valid_chars
             }
             self.postprocess_op = build_custom_post_process(postprocess_params)
+
+    def set_valid_chars(self, chars: str):
+        self.postprocess_op.set_valid_chars(chars)

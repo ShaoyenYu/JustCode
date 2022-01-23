@@ -8,8 +8,11 @@ class CustomAttnLabelDecode(AttnLabelDecode):
 
     def __init__(self, character_dict_path=None, use_space_char=False, **kwargs):
         super(CustomAttnLabelDecode, self).__init__(character_dict_path, use_space_char, **kwargs)
+        self.valid_chars, self.valid_char_idx = "", {}
+        self.set_valid_chars(kwargs.get("valid_chars", ""))
 
-        self.valid_chars = [*kwargs.get("valid_chars", "")]
+    def set_valid_chars(self, valid_chars: str):
+        self.valid_chars = [*valid_chars]
         self.valid_chars = self.add_special_char(self.valid_chars)
         self.valid_char_idx = {c: self.dict[c] for c in self.valid_chars}
 
