@@ -2,24 +2,17 @@ import time
 from threading import Event
 
 from techstacks.auto_game.games.azur_lane.controller import scene
-from techstacks.auto_game.games.azur_lane.controller.simulator import AzurLaneWindow
+from techstacks.auto_game.games.azur_lane.controller.simulator import Bluestack
 from util.concurrent import KillableThread
-from util.win32 import win32gui
 
 
-class Bluestack:
-    def __init__(self, window_name: str):
-        self.window_sim = AzurLaneWindow(window_name=window_name)
-        self.window_ctl = AzurLaneWindow(window_hwnd=win32gui.FindWindowEx(self.window_sim.hwnd, None, None, None))
-
-
-class AzurLaneTask(KillableThread):
+class TaskFarmSubmarineSOS(KillableThread):
     def __init__(self, simulator: Bluestack, refresh_scene=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.refresh = refresh_scene
         self.simulator = simulator
-        self.simulator.window_ctl.scene_cur = scene.Scene(self.simulator.window_ctl)
+        self.simulator.window_ctl.scene_cur = scene.SceneUnknown(self.simulator.window_ctl)
         self.can_run = Event()
         self.refresh_handler = None
 
@@ -59,7 +52,6 @@ class AzurLaneTask(KillableThread):
         self.can_run.wait()
         if self.simulator.window_ctl.scene_cur.at(scene.SceneAnchorAweigh):
             if (rescue_no := self.simulator.window_ctl.scene_cur.recognize_rescue_times()) > 0:
-                # self.simulator.window_ctl.scene_cur.goto()
                 print(f"remain rescue times: {rescue_no}")
                 self.simulator.window_ctl.scene_cur.goto(scene.Namespace.popup_rescue_sos)
             return rescue_no
@@ -96,29 +88,34 @@ class AzurLaneTask(KillableThread):
         self.can_run.wait()
         if self.simulator.window_ctl.scene_cur.at(scene.SceneCampaign):
             if self.simulator.window_ctl.scene_cur.attack_enemies():
-                time.sleep(5)
+                time.sleep(8)
 
     def from_formation_to_battle(self):
         self.can_run.wait()
+        if self.simulator.window_ctl.scene_cur.at(scene.PopupInfoAutoBattle):
+            self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_battle_formation)
         if self.simulator.window_ctl.scene_cur.at(scene.SceneBattleFormation):
-            self.simulator.window_ctl.scene_cur.set_automation(turn_on=True)
-            self.simulator.window_ctl.scene_cur.set_auto_submarine(turn_on=False)
             self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_battle)
 
     def from_checkpoint_to_campaign(self):
         self.can_run.wait()
         if self.simulator.window_ctl.scene_cur.at(scene.PopupGetShip):
             self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_campaign)
+            time.sleep(10)
 
-        if self.simulator.window_ctl.scene_cur.at(scene.SceneBattleCheckpoint):
-            self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_battle_get_items)
+        if self.simulator.window_ctl.scene_cur.at(scene.SceneBattleCheckpoint00):
+            self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_campaign)
+            time.sleep(10)
 
-        if self.simulator.window_ctl.scene_cur.at(scene.SceneBattleGetItems):
+        if self.simulator.window_ctl.scene_cur.at(scene.SceneBattleCheckpoint01):
+            self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_get_items)
+
+        if self.simulator.window_ctl.scene_cur.at(scene.SceneGetItems):
             self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_battle_result)
 
         if self.simulator.window_ctl.scene_cur.at(scene.SceneBattleResult):
             self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_campaign)
-            time.sleep(5)
+            time.sleep(10)
 
     def from_campaign_info_to_campaign(self):
         self.can_run.wait()
@@ -161,6 +158,6 @@ class AzurLaneTask(KillableThread):
 
 if __name__ == '__main__':
     bs = Bluestack("BS_AzurLane")
-    task = AzurLaneTask(bs, refresh_scene=True)
+    task = TaskFarmSubmarineSOS(bs, refresh_scene=True)
     task.start()
     task.join()
