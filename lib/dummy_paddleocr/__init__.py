@@ -5,19 +5,19 @@ import paddleocr
 
 from lib.dummy_paddleocr.tools.infer.predict_rec import CustomTextRecognizer
 
-PADDLEOCR_DIR = Path(paddleocr.__file__).parent
-PROJECT_DIR = Path(__file__).parent.parent.parent
+DIR_PROJECT = Path(__file__).parent.parent.parent
+DIR_PADDLEOCR = Path(paddleocr.__file__).parent
 
 
 def prepare_default_args(lang="chinese_cht", rec_algo="RARE") -> Namespace:
     if lang == "chinese_cht":
-        det_model_dir = f"{PROJECT_DIR}/lib/dummy_paddleocr/inferences/chinese_cht/ch_ppocr_mobile_v2.0_det_infer"
-        rec_model_dir = f"{PROJECT_DIR}/lib/dummy_paddleocr/inferences/chinese_cht/ch_ppocr_mobile_v2.0_rec_infer"
-        cls_model_dir = f"{PROJECT_DIR}/lib/dummy_paddleocr/inferences/chinese_cht/ch_ppocr_mobile_v2.0_cls_infer"
+        det_model_dir = f"{DIR_PROJECT}/lib/dummy_paddleocr/inferences/chinese_cht/ch_ppocr_mobile_v2.0_det_infer"
+        rec_model_dir = f"{DIR_PROJECT}/lib/dummy_paddleocr/inferences/chinese_cht/ch_ppocr_mobile_v2.0_rec_infer"
+        cls_model_dir = f"{DIR_PROJECT}/lib/dummy_paddleocr/inferences/chinese_cht/ch_ppocr_mobile_v2.0_cls_infer"
 
-        rec_char_dict_path = f"{PADDLEOCR_DIR}/ppocr/utils/dict/chinese_cht_dict.txt"
-        vis_font_path = f"{PADDLEOCR_DIR}/doc/fonts/simfang.ttf"
-        e2e_char_dict_path = f'{PADDLEOCR_DIR}/ppocr/utils/ic15_dict.txt'
+        rec_char_dict_path = f"{DIR_PADDLEOCR}/ppocr/utils/dict/chinese_cht_dict.txt"
+        vis_font_path = f"{DIR_PADDLEOCR}/doc/fonts/simfang.ttf"
+        e2e_char_dict_path = f'{DIR_PADDLEOCR}/ppocr/utils/ic15_dict.txt'
 
         default_text_recognizer_args = Namespace(
             use_gpu=False, ir_optim=True, use_tensorrt=False, min_subgraph_size=15, precision='fp32', gpu_mem=500,
@@ -51,4 +51,6 @@ def prepare_default_args(lang="chinese_cht", rec_algo="RARE") -> Namespace:
     return default_text_recognizer_args
 
 
-default_text_recognizer_zhtw = CustomTextRecognizer(args=prepare_default_args(lang="chinese_cht", rec_algo="RARE"))
+def load_recognizer():
+    args = prepare_default_args(lang="chinese_cht", rec_algo="RARE")
+    return CustomTextRecognizer(args)

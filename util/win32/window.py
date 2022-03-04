@@ -183,7 +183,7 @@ class ScreenUtilityMixin:
         self.release_dc()
         return result
 
-    def get_pixel(self, x, y, as_int=False):
+    def pixel_from_window(self, x, y, as_int=False):
         """
 
         Args:
@@ -202,10 +202,13 @@ class ScreenUtilityMixin:
             print("failed to get pixel, retrying...")
             win32gui.ReleaseDC(self.hwnd, hw_dc)
             time.sleep(.1)
-            rgb = self.get_pixel(x, y, as_int)
+            rgb = self.pixel_from_window(x, y, as_int)
         else:
             win32gui.ReleaseDC(self.hwnd, hw_dc)
         return rgb
+
+    def pixel_from_image(self, image: np.ndarray, x, y, as_int=False):
+        raise NotImplementedError
 
 
 class ControllerMixin:
