@@ -6,7 +6,32 @@ Button_BackToMain: &Button_BackToMain
     [ 1828, 65, 16774094 ], [ 1860, 66, 16773070 ],
   ]
 
+Scene_DelegationList: &Scene_DelegationList
+  Label_Delegation:
+    __Eigen: [
+      [ 202, 27, 16774127 ], [ 212, 48, 16773086 ],  # 文字 - 委
+      [ 232, 25, 16774135 ], [ 260, 54, 16773070 ],  # 文字 - 托
+    ]
+  Label_AvailableFleets:
+    __Eigen: [
+      [ 1395, 38, 16771030 ], [ 1455, 38, 16774127 ], [ 1472, 38, 15652557 ], [ 1508, 32, 16776191 ],  # 文字 - 可出舰队
+    ]
+  Label_Mission:
+    __Image: !!str /assets/commission/delegation/Label_Mission.png
+  Label_Level:
+    __Image: !!str /assets/commission/delegation/Label_Level.png
+    Label_LevelNo:
+      __RelPos: []
+    Label_TimeLimit:
+      __RelPos
+    Label_Processing:
+      __Image: !!str /assets/commission/delegation/Label_Processing.png
+      __RelPos: [260, 134]
+  Label_Oil:
+    __Image: !!str /assets/commission/delegation/Label_Oil.png
+
 Popup_Commission: &Popup_Commission
+  __Rect: [ [ 0, 194, 9128000 ], [ 68, 325, 7030856 ], ]
   Label_Commission: # 舰队事项(开启)
     __Eigen: [
       [ 26, 82, 16777215 ], [ 50, 143, 9722169 ], [ 337, 142, 2696315 ], [ 607, 120, 7571151 ]
@@ -15,14 +40,29 @@ Popup_Commission: &Popup_Commission
     __Eigen: [
       [ 44, 476, 16777215 ], [ 44, 688, 16777215 ], [ 44, 900, 16777215 ],
     ]
-  Delegation:
-    State_Expand:
-      __Eigen:[
-      [44, 469, 16777215],
-      ]
-    State_Fold: [
-      [ 45, 479, 16777215 ],
+  Label_Mission:
+    __Image: !!str /assets/commission/Label_Mission.png
+  Scene_DelegationList: *Scene_DelegationList
+  Scene_DelegationSuccess:
+    __Eigen: [
+      [ 294, 161, 8776695 ],[ 350, 232, 8442101 ], [ 412, 153, 11927551 ], [ 473, 221, 7077887 ],
+      [ 518, 223, 4899583 ],[ 579, 184, 6542335 ], [ 643, 159, 10875903 ], [ 679, 229, 3654143 ],
     ]
+    Button_ExitScene:
+      __Rect: [ [ 866, 87, 11369827 ],[ 1888, 358, 6507847 ], ]
+    State_Expand:
+      __Eigen: [
+        [ 44, 469, 16777215 ],
+      ]
+    State_Fold:
+      __Eigen: [
+        [ 45, 479, 16777215 ],
+      ]
+    State_HasCompleted:
+      __Eigen: [
+        [ 630, 408, 16777215 ], [ 647, 427, 16777215 ], [ 655, 406, 16777215 ],
+        [ 697, 403, 16777215 ], [ 694, 423, 16777215 ], [ 676, 415, 16777215 ],
+      ]
 
 Icon_Resources: &Icon_Resources
   Icon_Oil:
@@ -37,6 +77,15 @@ Label_WeighAnchor: &Label_WeighAnchor
     [ 183, 51, 16772054 ], [ 241, 50, 16773086 ], # 文字 - 出击
   ]
 
+Popup_Information:
+  AutoBattle:
+    __Eigen: [
+      [ 495, 244, 16777215 ], [ 545, 252, 16777215 ], [ 626, 286, 16777215 ],
+    ]
+    Button_Ensure:
+      __Rect: [ [ 834, 744, 10249529 ], [ 1088, 828, 16250871 ] ]
+      __Eigen: [ [ 894, 766, 16777215 ], [ 947, 771, 16777215 ], [ 974, 806, 16777215 ], [ 1011, 781, 16777215 ], ]
+
 
 # Scenes
 Main: # 主界面
@@ -50,20 +99,25 @@ Main: # 主界面
     Popup_Commission: *Popup_Commission # 按钮 - 舰队事项
   # 底部导航栏
   Button_Shop: # 按钮 - 商店
-    __Eigen: [ [ 132, 1018, 10354679 ],[ 187, 1020, 14090239 ], ] # 文字
+    __Rect: [ [ 15, 989, 2181741 ], [ 241, 1058, 2180459 ] ]
   Button_LivingArea:
     __Rect: [ [ 735, 1005, 5389361 ], [ 951, 1058, 4337705 ] ]
     State_HasNewNotice:
       __Image: !!str /assets/main/Label_HasNewNotice.png
       __ImageRect: [ [ 939, 1002, 5332156 ], [ 955, 1022, 11314872 ] ]
-  # 按钮 - 出击
   Button_AnchorAweigh: # 按钮 - 出击
+    __Rect: [ [ 1514, 435, 4568300 ], [ 1730, 648, 5416670 ] ]
+    __Eigen: [
+      [ 1537, 468, 16777215 ], [ 1573, 473, 16777215 ],  # "出"
+      [ 1536, 455, 5419751 ], [ 1571, 456, 5094119 ],  # “击”
+    ]
+  Button_Formation: # 按钮 - 编队
     __Rect: [
-      [ 1514, 435, 4568300 ], [ 1730, 648, 5416670 ],
+      [ 1100, 538, 14063739 ], [ 1478, 650, 15903810 ],
     ]
     __Eigen: [
-      [ 1537, 468, 16777215 ], [ 1573, 473, 16777215 ],  # 文字 - 出击
-      [ 1536, 455, 5419751 ], [ 1571, 456, 5094119 ],
+      [ 1284, 564, 16777215 ], [ 1328, 594, 16777215 ],  # "编"
+      [ 1340, 566, 16777215 ], [ 1374, 604, 16777215 ],  # "队"
     ]
 
   Popup_Information:
@@ -256,6 +310,8 @@ Campaign:
     Button_Ensure:
       __Rect: [ [ 837, 730, 10249529 ], [ 1086, 805, 14587482 ] ]
       __Eigen: [ [ 913, 775, 16777215 ], [ 1004, 785, 16777215 ], [ 994, 746, 16777215 ] ]
+    Button_Exit:
+      __Rect: [ [ 1295, 261, 5395142 ], [ 1390, 320, 5394886 ], ]
   Popup_GetShip:
     Button_Exit:
       __Rect: [ [ 286, 110, 10835300 ],[ 1284, 789, 16243687 ], ]
@@ -269,7 +325,6 @@ Campaign:
       [ 198, 98, 16777215 ],  # 限时下面的白点
       [ 311, 141, 16751194 ], # FLEET 后面的蓝点
       [ 1154, 1009, 16777215 ], # 按钮 - 撤退
-      [ 1503, 1002, 16777215 ], # 按钮 - 切换
       [ 1738, 1022, 16777215 ], # 按钮 - 迎击
     ]
   Label_FleetNo:
@@ -337,6 +392,7 @@ Campaign:
           R26: !!str /assets/campaign/Label_LevelMedium_R26.png
       Large:
         __Images:
+          R35: !!str /assets/campaign/Label_LevelLarge_R35.png
           RX8: !!str /assets/campaign/Label_LevelLarge_R8.png
       Boss:
         __Images:
@@ -382,18 +438,32 @@ BeforeBattle:
         [ 1357, 755, 16777215 ], [ 1391, 785, 16776447 ],  # 文字 - 舰队
       ]
 
+Popup_GetItems:
+  Label_GetItems1:
+    __Eigen: [
+      [ 862, 314, 16777215 ], [ 955, 323, 16777215 ],[ 1008, 357, 16777215 ],[ 1073, 355, 16777215 ],  # 文字 - 获得道具
+    ]
+  Label_GetItems2:
+    __Eigen: [
+      [ 863, 201, 16777215 ], [ 894, 245, 16777215 ], [ 921, 200, 16777215 ], [ 938, 238, 16777215 ],
+      [ 974, 201, 16777215 ], [ 1014, 205, 16777215 ], [ 1041, 202, 16777215 ], [ 1074, 246, 16777215 ],
+    ]
+    __Region: [ [ 466, 304, 3231075 ], [ 1467, 776, 4866361 ] ]
+
 AfterBattle:
-  Checkpoint: # 战斗评价
+  Checkpoint_00:
+    Label_Perfect:
+      __Eigen: [
+        [ 697, 87, 3778254 ], [ 642, 136, 7526119 ], [ 582, 179, 7662823 ],  # 文字 - 大获全胜S
+        [ 146, 289, 16777215 ], [ 147, 331, 16777215 ],  # 标志 - 竖线
+      ]
+    Button_EmptySpace:
+      __Rect: [ [ 1505, 950, 553149 ], [ 1761, 1032, 15723503 ] ]
+  Checkpoint_01: # 战斗评价
     Label_Checkpoint:
       __Eigen: [
         [ 927, 561, 16777215 ],[ 990, 553, 16777215 ],[ 1056, 536, 16777215 ],[ 1151, 577, 16777215 ],  # 文字 - 战斗评价
         [ 477, 951, 16777215 ], [ 646, 953, 16777215 ],  # 文字 - Touch To Continue
-      ]
-
-  GetItems:
-    Label_GetItems:
-      __Eigen: [
-        [ 862, 314, 16777215 ], [ 955, 323, 16777215 ],[ 1008, 357, 16777215 ],[ 1073, 355, 16777215 ],  # 文字 - 获得道具
       ]
 
   BattleResult:

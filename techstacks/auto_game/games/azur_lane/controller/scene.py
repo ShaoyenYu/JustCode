@@ -2,8 +2,6 @@ import itertools
 import re
 import time
 from abc import abstractmethod
-from hashlib import md5
-from pickle import dumps
 from typing import Tuple, Union, Any, Optional
 
 import cv2
@@ -17,13 +15,10 @@ from scipy.spatial import distance_matrix
 
 from techstacks.auto_game.games.azur_lane.config import CONFIG_SCENE, DIR_BASE
 from techstacks.auto_game.games.azur_lane.controller.simulator import AzurLaneWindow
+from techstacks.auto_game.util import gen_key
 from util.io import load_yaml
 
 ASSETS = load_yaml(CONFIG_SCENE)
-
-
-def gen_key(*args, **kwargs):
-    return md5(dumps((args, kwargs))).hexdigest()
 
 
 def cache(max_cache=10):
@@ -68,27 +63,35 @@ def match_single_template(origin: np.ndarray, template: np.ndarray, method=TM_CC
     return min_val, max_val, min_loc, max_loc
 
 
-def match_multi_template(img_ori: np.ndarray, img_tem: np.ndarray, method=TM_CCOEFF_NORMED, threshold=.8, debug=True):
-    res = cv2.matchTemplate(img_ori, img_tem, method)
-    if method in (TM_SQDIFF, TM_SQDIFF_NORMED):
-        loc = np.where(res <= threshold)
-    else:
-        loc = np.where(res >= threshold)
-    print(cv2.minMaxLoc(res))
+def debug_show(f):
+    def wrapper(img_ori, img_tem, method, thresh, thresh_dedup):
+        locs = f(img_ori, img_tem, method, thresh, thresh_dedup)
 
-    if debug:
         img_cp = img_ori.copy()
         w, h = img_tem.shape[:2][::-1]
-        locs = np.array([loc[1], loc[0]]).T
-        if len(locs) > 0:
-            locs = combine_similar_points(locs)
         for pt in locs:
             print(pt)
-            cv2.rectangle(img_cp, pt, (pt[0] + w, pt[1] + h), (255, 0, 0), 2)
+            cv2.rectangle(img_cp, tuple(pt), (pt[0] + w, pt[1] + h), (255, 0, 0), 5)
         plt.imshow(img_cp)
         plt.show()
 
-    return list(np.array([loc[1], loc[0]]).T)
+        return locs
+
+    return wrapper
+
+
+def match_multi_template(img_ori: np.ndarray, img_tem: np.ndarray, method=TM_CCOEFF_NORMED, thresh=.8, thresh_dedup=0):
+    res = cv2.matchTemplate(img_ori, img_tem, method)
+    if method in (TM_SQDIFF, TM_SQDIFF_NORMED):
+        loc = np.where(res <= thresh)
+    else:
+        loc = np.where(res >= thresh)
+    locs = np.array([loc[1], loc[0]]).T
+
+    if thresh_dedup > 0 and len(locs) > 0:
+        locs = combine_similar_points(locs, threshold=thresh_dedup)
+
+    return list(locs)
 
 
 def get_eigen(*objects):
@@ -104,21 +107,22 @@ def goto_scene_main(window: AzurLaneWindow):
     window.left_click(ASSETS["AnchorAweigh"]["Button_BackToMain"], sleep=1)
 
 
-def ocr_preprocess(img):
+def ocr_preprocess(img, k_size=(3, 3)):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    blur = cv2.GaussianBlur(gray, (3, 3), 0)
+    blur = cv2.GaussianBlur(gray, k_size, 0)
     thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
 
     # Morph open to remove noise
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, k_size)
     final = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=1)
 
     return final
 
 
-def ocr_int(img, config):
-    final_img = ocr_preprocess(img)
-    data = pytesseract.image_to_string(final_img, lang='eng', config=config)
+def ocr_int(img, config, lang="eng", preprocess=None):
+    if preprocess is not None:
+        img = ocr_preprocess(img)
+    data = pytesseract.image_to_string(img, lang=lang, config=config)
     return data
 
 
@@ -151,7 +155,13 @@ def combine_similar_points(points, threshold=50):
 
 
 class Namespace:
+    popup_info_auto_battle = "Popup.Info.AutoBattle"
+
     scene_main = "Scene.Main"
+    popup_commission = "Popup.Commission"
+    scene_delegation_list = "Scene.DelegationList"
+
+    scene_delegation_success = "Scene.Delegation.Success"
     scene_anchor_aweigh = "Scene.AnchorAweigh"
     popup_rescue_sos = "Popup.AnchorAweigh.RescueSOS"
     scene_campaign = "Scene.Campaign"
@@ -159,8 +169,9 @@ class Namespace:
     scene_battle_formation = "Scene.Battle.Formation"
     scene_battle = "Scene.Battle"
     popup_get_ship = "Popup.GetShip"
-    scene_battle_checkpoint = "Scene.Battle.Checkpoint"
-    scene_battle_get_items = "Scene.Battle.GetItems"
+    scene_battle_checkpoint_00 = "Scene.Battle.Checkpoint_00"
+    scene_battle_checkpoint_01 = "Scene.Battle.Checkpoint_01"
+    scene_get_items = "Scene.GetItems"
     scene_battle_result = "Scene.Battle.Result"
 
     popup_stage_info = "Popup.StageInfo"
@@ -203,28 +214,28 @@ class Scene:
     def update_scenes(self, scene_cur, scene_prev=None):
         self.window.scene_prev, self.window.scene_cur = scene_prev or self.window.scene_cur, scene_cur
 
-    def is_at_this_scene(self, window: AzurLaneWindow = None):
+    def at_this_scene_(self, window: AzurLaneWindow = None):
         window = window if window is not None else self.window
-        return self._is_at_this_scene(window)
+        return self.at_this_scene(window)
 
     @classmethod
     @abstractmethod
-    def _is_at_this_scene(cls, window: AzurLaneWindow) -> bool:
+    def at_this_scene(cls, window: AzurLaneWindow) -> bool:
         """Custom method to implement"""
         pass
 
     def goto(self, next_scene, sleep=0, *args, **kwargs):
-        if (next_scene := scene_map.get(next_scene)) is None:
+        if (next_scene := scene_names.get(next_scene)) is None:
             has_arrived = False
             print(f"Has arrived: {has_arrived}")
             return has_arrived
 
-        if not self.is_at_this_scene():
+        if not self.at_this_scene_():
             print(f"Not here: {self}")
             return False
 
         self.bounds[next_scene.name](self.window, *args, **kwargs)
-        if has_arrived := next_scene._is_at_this_scene(self.window):
+        if has_arrived := next_scene.at_this_scene(self.window):
             self.update_scenes(next_scene(self.window))
         else:
             self.window.scene_cur.detect_scene()
@@ -232,9 +243,6 @@ class Scene:
         if sleep > 0:
             time.sleep(sleep)
         return has_arrived
-
-    def goto_(self, window: AzurLaneWindow, next_scene: str):
-        return self.bounds[next_scene](window)
 
     def detect_scene(self):
         if (cur_scene := self._detect_scene(self.window)) is None:
@@ -245,9 +253,8 @@ class Scene:
 
     @classmethod
     def _detect_scene(cls, window):
-        for scene in scenes_maybe:
-            # print("*" * 36 + f"{scene.name}" + "*" * 36)
-            if scene._is_at_this_scene(window):
+        for scene in scenes_registered:
+            if scene.at_this_scene(window):
                 return scene
         return SceneUnknown
 
@@ -260,7 +267,7 @@ class SceneUnknown(Scene):
     bounds = dict()
 
     @classmethod
-    def _is_at_this_scene(cls, window: AzurLaneWindow) -> bool:
+    def at_this_scene(cls, window: AzurLaneWindow) -> bool:
         if Scene._detect_scene(window).name == "Scene.Unknown":
             return True
         return False
@@ -272,17 +279,17 @@ class SceneMain(Scene):
     @property
     def bounds(self) -> dict:
         bounds = {
-            Namespace.scene_anchor_aweigh: self.goto_scene_anchor_aweigh
+            Namespace.scene_anchor_aweigh: self.goto_scene_anchor_aweigh,
+            Namespace.popup_commission: self.goto_popup_commission,
         }
         return bounds
 
     @classmethod
-    def _is_at_this_scene(cls, window: AzurLaneWindow) -> bool:
+    def at_this_scene(cls, window: AzurLaneWindow) -> bool:
         points_to_check = get_eigen(
             ASSETS["Main"]["Icon_Resources"]["Icon_Oil"],
             ASSETS["Main"]["Icon_Resources"]["Icon_Money"],
             ASSETS["Main"]["Icon_Resources"]["Icon_Diamond"],
-            ASSETS["Main"]["Button_Shop"],
             ASSETS["Main"]["Button_AnchorAweigh"],
         )
         return window.compare_with_pixel(points_to_check, threshold=1)
@@ -292,12 +299,154 @@ class SceneMain(Scene):
         window.left_click(ASSETS["Main"]["Button_AnchorAweigh"], sleep=1.5)
 
     @staticmethod
+    def goto_popup_commission(window: AzurLaneWindow):
+        window.left_click(ASSETS["Main"]["Button_Commission"]["Popup_Commission"], sleep=1.5)
+
+    @staticmethod
     def open_popup_living_area(window: AzurLaneWindow):
         window.left_click(ASSETS["Main"]["Button_LivingArea"])
 
     def has_new_notice(self):
         asset = ASSETS["Main"]["Button_LivingArea"]["State_HasNewNotice"]
         return self.window.compare_with_template(asset["__ImageRect"], read_template(asset["__Image"]), .8)
+
+
+class PopupCommission(Scene):
+    name = Namespace.popup_commission
+
+    def bounds(self) -> dict:
+        destinations = {}
+        return destinations
+
+    @classmethod
+    def at_this_scene(cls, window: AzurLaneWindow) -> bool:
+        points_to_check = get_eigen(
+            ASSETS["Main"]["Button_Commission"]["Popup_Commission"]["Label_Commission"],
+        )
+        return window.compare_with_pixel(points_to_check, threshold=1)
+
+    def is_commissions_all_folded(self):
+        points_to_check = get_eigen(
+            ASSETS["Main"]["Button_Commission"]["Popup_Commission"]["State_AllFolded"],
+        )
+        return self.window.compare_with_pixel(points_to_check, threshold=1)
+
+    def detect_delegation_summary(self):
+        from matplotlib import pyplot as plt
+        def s(i):
+            plt.imshow(i)
+            plt.show()
+
+        match_multi_template_ = debug_show(match_multi_template)
+
+        template = read_template(ASSETS["Popup_Commission"]["Label_Mission"]["__Image"])
+        image = self.window.screenshot()
+        q = match_multi_template_(image, template, method=TM_SQDIFF_NORMED, threshold=.01)
+
+        x_rel, y_rel = 282, 34
+        width, height = 144, 44
+
+        for x, y in q:
+            image = self.window.screenshot(x + x_rel, y + y_rel, width, height)
+            a2 = np.where(np.where(image < 230, 255, 0) != 255, 0, 255).astype(image.dtype)
+            # s(a2)
+            # print(data)
+            res = ocr_int(a2, config="--psm 8 --oem 3 -c tessedit_char_whitelist=0123456789:", lang="eng")
+            print(res)
+
+
+class SceneDelegationList(Scene):
+    name = Namespace.scene_delegation_list
+
+    def bounds(self) -> dict:
+        destinations = {
+            Namespace.scene_main: goto_scene_main
+        }
+        return destinations
+
+    @classmethod
+    def at_this_scene(cls, window: AzurLaneWindow) -> bool:
+        points_to_check = get_eigen(
+            ASSETS["Scene_DelegationList"]["Label_Delegation"],
+            ASSETS["Scene_DelegationList"]["Label_AvailableFleets"],
+        )
+        return window.compare_with_pixel(points_to_check, threshold=1)
+
+    # def detect_delegations(self):
+    #     from matplotlib import pyplot as plt
+    #     from lib.dummy_paddleocr import default_text_recognizer_zhtw
+    #     def s(i):
+    #         plt.imshow(i)
+    #         plt.show()
+    #
+    #     match_multi_template_ = debug_show(match_multi_template)
+    #
+    #     template = read_template(ASSETS["Popup_Commission"]["Scene_DelegationList"]["Label_Mission"]["__Image"])
+    #     image = self.window.screenshot()
+    #     labels_mission = match_multi_template_(image, template, method=TM_CCOEFF_NORMED, threshold=.95)
+    #
+    #     x_rel, y_rel = -145, 20
+    #     width, height = 225, 36
+    #     tasks = [
+    #         "日常資源開發", "高階戰術研發", "高階科研任務",
+    #         "同盟觀艦儀式", "前線基地防衛巡邏", "大型商船護衛",
+    #         "I", "V"
+    #     ]
+    #     white_chars = "".join(set("".join(tasks)))
+    #
+    #     for x, y in labels_mission:
+    #         image_mission_name = image[y + y_rel: y + y_rel + height, x + x_rel: x + x_rel + width]
+    #         # image = self.window.screenshot(x + x_rel, y + y_rel, width, height)
+    #         a2 = np.where(np.where(image_mission_name < 180, 255, 0) != 255, 0, 255).astype(image_mission_name.dtype)
+    #         a3 = cv2.cvtColor(a2, cv2.COLOR_RGB2GRAY)
+    #         thresh, a4 = cv2.threshold(a3, 127, 255, cv2.THRESH_BINARY)
+    #         bolder = a4.argmin(axis=1)
+    #         if not (bolder == 0).all():
+    #             bolder = bolder[bolder > 0].min() - 5
+    #             a5 = a4[:, bolder:]
+    #         else:
+    #             continue
+    #         # a3 = a2.flatten()
+    #         # a4 = np.where((a3 != 0) | (a3 != 255), 0, 255).reshape(a2.shape)
+    #         # res = ocr_zhtw(a2, config=f"--psm 7 --oem 1 tessedit_char_whitelist={white_chars} tessedit_char_blacklist=!！嵒")
+    #         # res = pytesseract.image_to_string(a4, lang='chi_tra', config=f"--psm 7 --oem 1")
+    #         ocr_tesseract = re.sub("\s", "", pytesseract.image_to_string(a5, lang="chi_tra", config=f"--psm 7 --oem 1"))
+    #         valid_chars = "|BINVWY主交任保倫假偵備儀前力務卡同員商地型基多大姆委島巡常度式戰接援支救敵日殲波源滅物瑪瓦發盟研礦科級線羅脈船艦萌術衛裝襲要觀解託護資輸運邏部開防隊階高麗馬內"
+    #         default_text_recognizer_zhtw.set_valid_chars(valid_chars)
+    #         ocr_paddle = default_text_recognizer_zhtw([cv2.cvtColor(a5, cv2.COLOR_BGR2RGB)])[0][0][0]
+    #
+    #         # res = ocr_zhtw(a2, config=f"--psm 7 --oem 3")
+    #
+    #         print(ocr_tesseract)
+    #         print(ocr_paddle)
+    #         continue
+    #         # print(data)
+    #
+    #     pass
+
+
+class SceneDelegationSuccess(Scene):
+    name = Namespace.scene_delegation_success
+
+    @property
+    def bounds(self) -> dict:
+        destinations = {
+            Namespace.scene_get_items: self.goto_popup_get_items,
+        }
+        return destinations
+
+    @classmethod
+    def at_this_scene(cls, window: AzurLaneWindow) -> bool:
+        points_to_check = get_eigen(
+            ASSETS["Main"]["Button_Commission"]["Popup_Commission"]["Scene_DelegationSuccess"],
+        )
+        return window.compare_with_pixel(points_to_check, threshold=1)
+
+    @staticmethod
+    def goto_popup_get_items(window: AzurLaneWindow):
+        window.left_click(
+            ASSETS["Main"]["Button_Commission"]["Popup_Commission"]["Delegation"]["Scene_DelegationSuccess"][
+                "Button_ExitScene"], sleep=1)
 
 
 class SceneAnchorAweigh(Scene):
@@ -312,7 +461,7 @@ class SceneAnchorAweigh(Scene):
         return destinations
 
     @classmethod
-    def _is_at_this_scene(cls, window: AzurLaneWindow) -> bool:
+    def at_this_scene(cls, window: AzurLaneWindow) -> bool:
         points_to_check = get_eigen(
             ASSETS["AnchorAweigh"]["Icon_Resources"]["Icon_Oil"],
             ASSETS["AnchorAweigh"]["Icon_Resources"]["Icon_Money"],
@@ -330,7 +479,7 @@ class SceneAnchorAweigh(Scene):
         x, y, w, h = get_image_xywh(ASSETS["AnchorAweigh"]["Button_RescueSOS"])
         image = self.window.screenshot(x, y, w, h)
         try:
-            res = int(ocr_int(image, config="--psm 8 --oem 3 -c tessedit_char_whitelist=012345678")[0])
+            res = int(ocr_int(ocr_preprocess(image), config="--psm 8 --oem 3 -c tessedit_char_whitelist=012345678")[0])
         except:
             res = None
             for _ in range(max_retry):
@@ -352,7 +501,7 @@ class PopupRescueSOS(Scene):
         return destinations
 
     @classmethod
-    def _is_at_this_scene(cls, window: AzurLaneWindow) -> bool:
+    def at_this_scene(cls, window: AzurLaneWindow) -> bool:
         points_to_check = get_eigen(
             ASSETS["AnchorAweigh"]["Button_RescueSOS"]["Popup_RescueSOS"],
         )
@@ -405,7 +554,7 @@ class SceneCampaignChapter(Scene):
         return destinations
 
     @classmethod
-    def _is_at_this_scene(cls, window: AzurLaneWindow) -> bool:
+    def at_this_scene(cls, window: AzurLaneWindow) -> bool:
         points_to_check = get_eigen(
             ASSETS["CampaignChapter"]["Button_BackToMain"],
             ASSETS["CampaignChapter"]["Label_WeighAnchor"],
@@ -462,7 +611,7 @@ class PopupStageInfo(Scene):
         return destinations
 
     @classmethod
-    def _is_at_this_scene(cls, window: AzurLaneWindow) -> bool:
+    def at_this_scene(cls, window: AzurLaneWindow) -> bool:
         points_to_check = get_eigen(
             ASSETS["PopupStageInfo"]["Label_WeighAnchor"],
             ASSETS["PopupStageInfo"]["Button_ImmediateStart"],
@@ -480,7 +629,7 @@ class PopupStageInfo(Scene):
     def is_automation(self) -> bool:
         lt, rb = ASSETS["PopupStageInfo"]["Button_Automation"]["__Rect"]
         mid = tuple(int((lt[i] + rb[i]) / 2) for i in range(2))
-        rgb_tuple = self.window.get_pixel(*mid, as_int=False)
+        rgb_tuple = self.window.pixel_from_window(*mid, as_int=False)
 
         return rgb_tuple[0] > 100
 
@@ -507,7 +656,7 @@ class PopupFleetSelection(Scene):
         return destinations
 
     @classmethod
-    def _is_at_this_scene(cls, window: AzurLaneWindow) -> bool:
+    def at_this_scene(cls, window: AzurLaneWindow) -> bool:
         points_to_check = get_eigen(
             ASSETS["PopupFleetSelect"]["Label_FleetSelect"],
             ASSETS["PopupFleetSelect"]["Button_ImmediateStart"],
@@ -542,8 +691,8 @@ class PopupFleetSelectionArbitrate(PopupFleetSelection):
         self.is_fleet_fixed = False
 
     @classmethod
-    def _is_at_this_scene(cls, window: AzurLaneWindow) -> bool:
-        return (not cls._is_fixed_fleet(window)) and super()._is_at_this_scene(window)
+    def at_this_scene(cls, window: AzurLaneWindow) -> bool:
+        return (not cls._is_fixed_fleet(window)) and super().at_this_scene(window)
 
     def choose_team(self, team_one=None, team_two=None):
         btns = ASSETS["PopupFleetSelect"]["Formation"]
@@ -569,8 +718,8 @@ class PopupFleetSelectionFixed(PopupFleetSelection):
         self.is_fleet_fixed = True
 
     @classmethod
-    def _is_at_this_scene(cls, window: AzurLaneWindow) -> bool:
-        return cls._is_fixed_fleet(window) and super()._is_at_this_scene(window)
+    def at_this_scene(cls, window: AzurLaneWindow) -> bool:
+        return cls._is_fixed_fleet(window) and super().at_this_scene(window)
 
 
 class PopupFleetSelectionDuty(PopupFleetSelection):
@@ -585,10 +734,10 @@ class PopupFleetSelectionDuty(PopupFleetSelection):
         return destinations
 
     @classmethod
-    def _is_at_this_scene(cls, window: AzurLaneWindow) -> bool:
+    def at_this_scene(cls, window: AzurLaneWindow) -> bool:
         duties = cls.show_duty(window)
 
-        return duties != 0b0 and super()._is_at_this_scene(window)
+        return duties != 0b0 and super().at_this_scene(window)
 
     @staticmethod
     def show_duty(window):
@@ -636,8 +785,8 @@ class PopupFleetSelectionDuty(PopupFleetSelection):
 
 class SceneCampaignChapter03(SceneCampaignChapter):
     @classmethod
-    def _is_at_this_scene(cls, window: AzurLaneWindow) -> bool:
-        return super()._is_at_this_scene(window) and cls._recognize_chapter_title(window) == 3
+    def at_this_scene(cls, window: AzurLaneWindow) -> bool:
+        return super().at_this_scene(window) and cls._recognize_chapter_title(window) == 3
 
     def goto_sos_rescue(self, chapter_no=None) -> bool:
         pass
@@ -654,7 +803,7 @@ class SceneCampaign(Scene):
         return destinations
 
     @classmethod
-    def _is_at_this_scene(cls, window: AzurLaneWindow) -> bool:
+    def at_this_scene(cls, window: AzurLaneWindow) -> bool:
         points_to_check = get_eigen(
             ASSETS["Campaign"]["Label_LimitTime"],
             ASSETS["Campaign"]["Button_BackToMain"],
@@ -663,18 +812,6 @@ class SceneCampaign(Scene):
             ASSETS["Main"]["Icon_Resources"]["Icon_Diamond"],
         )
         return window.compare_with_pixel(points_to_check, threshold=1)
-
-    def is_commission_popup(self):
-        points_to_check = get_eigen(
-            ASSETS["Main"]["Button_Commission"]["Popup_Commission"]["Label_Commission"],
-        )
-        return self.window.compare_with_pixel(points_to_check, threshold=1)
-
-    def is_commissions_all_folded(self):
-        points_to_check = get_eigen(
-            ASSETS["Main"]["Button_Commission"]["Popup_Commission"]["State_AllFolded"],
-        )
-        return self.window.compare_with_pixel(points_to_check, threshold=1)
 
     def is_automation_on(self) -> bool:
         button = ASSETS["Campaign"]["Button_Automation"]
@@ -700,7 +837,7 @@ class SceneCampaign(Scene):
         x, y, w, h = get_image_xywh(ASSETS["Campaign"]["Label_FleetNo"])
         image = self.window.screenshot(x, y, w, h)
         try:
-            return int(ocr_int(image).strip())
+            return int(ocr_int(ocr_preprocess(image), config="--psm 8 --oem 3 -c tessedit_char_whitelist=1234").strip())
         except:
             for _ in range(max_retry):
                 res = self.recognize_fleet_no(max_retry=0)
@@ -709,10 +846,10 @@ class SceneCampaign(Scene):
     def get_fleet_formation(self) -> Optional[str]:
         if self.is_strategy_popup():
             for state in ("State_SingleLineAssault", "State_DoubleLineAdvance", "State_CircularDefense"):
-                points_to_check = self.get_points(
+                points_to_check = get_eigen(
                     ASSETS["Campaign"]["Button_Strategy"]["State_Expanded"]["Button_SwitchFormation"][state]
                 )
-                if self.compare_with_pixel(points_to_check, threshold=1):
+                if self.window.compare_with_pixel(points_to_check, threshold=1):
                     return state
         return None
 
@@ -720,9 +857,7 @@ class SceneCampaign(Scene):
     def _detect_enemy(img_screen, templates, threshold=.1, method=TM_SQDIFF_NORMED):
         res = []
         for img_template in templates:
-            res.extend(match_multi_template(
-                img_screen, img_template, threshold=threshold, method=method, debug=False
-            ))
+            res.extend(list(match_multi_template(img_screen, img_template, thresh=threshold, method=method)))
 
         if len(res) > 0:
             res = combine_similar_points(np.array(res))
@@ -738,6 +873,9 @@ class SceneCampaign(Scene):
         res = self._detect_enemy(img_screen, templates, threshold, method)
         if len(res) > 0 and scale != "Boss":
             res += np.array([50, 80])
+        else:
+            if len(res) == 1:
+                res += np.array([30, 30])
         return list(res)
 
     def attack_enemies(self):
@@ -772,7 +910,7 @@ class PopupGetShip(Scene):
         return destinations
 
     @classmethod
-    def _is_at_this_scene(cls, window: AzurLaneWindow) -> bool:
+    def at_this_scene(cls, window: AzurLaneWindow) -> bool:
         points_to_check = get_eigen(
             ASSETS["Campaign"]["Popup_GetShip"],
         )
@@ -794,16 +932,40 @@ class PopupCampaignInfo(Scene):
         return destinations
 
     @classmethod
-    def _is_at_this_scene(cls, window: AzurLaneWindow) -> bool:
+    def at_this_scene(cls, window: AzurLaneWindow) -> bool:
         points_to_check = get_eigen(
             ASSETS["Campaign"]["Popup_Information"],
-            ASSETS["Campaign"]["Popup_Information"]["Button_Ensure"],
+            # ASSETS["Campaign"]["Popup_Information"]["Button_Ensure"],
         )
         return window.compare_with_pixel(points_to_check, threshold=1)
 
     @staticmethod
     def goto_campaign(window):
-        window.left_click(ASSETS["Campaign"]["Popup_Information"]["Button_Ensure"], sleep=.75)
+        # window.left_click(ASSETS["Campaign"]["Popup_Information"]["Button_Ensure"], sleep=.75)
+        window.left_click(ASSETS["Campaign"]["Popup_Information"]["Button_Exit"], sleep=.75)
+
+
+class PopupInfoAutoBattle(Scene):
+    name = Namespace.popup_info_auto_battle
+
+    @property
+    def bounds(self) -> dict:
+        destinations = {
+            Namespace.scene_battle_formation: self.go_back
+        }
+        return destinations
+
+    @classmethod
+    def at_this_scene(cls, window: AzurLaneWindow) -> bool:
+        points_to_check = get_eigen(
+            ASSETS["Popup_Information"]["AutoBattle"],
+            ASSETS["Popup_Information"]["AutoBattle"]["Button_Ensure"],
+        )
+        return window.compare_with_pixel(points_to_check, threshold=1)
+
+    @staticmethod
+    def go_back(window):
+        window.left_click(ASSETS["Popup_Information"]["AutoBattle"]["Button_Ensure"], sleep=.75)
 
 
 class SceneBattleFormation(Scene):
@@ -818,7 +980,7 @@ class SceneBattleFormation(Scene):
         return destinations
 
     @classmethod
-    def _is_at_this_scene(cls, window: AzurLaneWindow) -> bool:
+    def at_this_scene(cls, window: AzurLaneWindow) -> bool:
         points_to_check = get_eigen(
             ASSETS["BeforeBattle"]["Formation"]["Button_WeighAnchor"],
             ASSETS["BeforeBattle"]["Formation"]["Label_MainFleet"],
@@ -866,27 +1028,49 @@ class SceneBattle(Scene):
         return destinations
 
     @classmethod
-    def _is_at_this_scene(cls, window: AzurLaneWindow) -> bool:
+    def at_this_scene(cls, window: AzurLaneWindow) -> bool:
         points_to_check = get_eigen(
             ASSETS["Battle"]["Button_Pause"],
         )
         return window.compare_with_pixel(points_to_check, threshold=1)
 
 
-class SceneBattleCheckpoint(Scene):
-    name = Namespace.scene_battle_checkpoint
+class SceneBattleCheckpoint00(Scene):
+    name = Namespace.scene_battle_checkpoint_00
 
     @property
     def bounds(self) -> dict:
         destinations = {
-            Namespace.scene_battle_get_items: self.goto_get_items
+            Namespace.scene_campaign: self.quit_scene
         }
         return destinations
 
     @classmethod
-    def _is_at_this_scene(cls, window: AzurLaneWindow) -> bool:
+    def at_this_scene(cls, window: AzurLaneWindow) -> bool:
         points_to_check = get_eigen(
-            ASSETS["AfterBattle"]["Checkpoint"]["Label_Checkpoint"],
+            ASSETS["AfterBattle"]["Checkpoint_00"]["Label_Perfect"],
+        )
+        return window.compare_with_pixel(points_to_check)
+
+    @staticmethod
+    def quit_scene(window: AzurLaneWindow):
+        window.left_click(ASSETS["AfterBattle"]["Checkpoint_00"]["Button_EmptySpace"], sleep=.75)
+
+
+class SceneBattleCheckpoint01(Scene):
+    name = Namespace.scene_battle_checkpoint_01
+
+    @property
+    def bounds(self) -> dict:
+        destinations = {
+            Namespace.scene_get_items: self.goto_get_items
+        }
+        return destinations
+
+    @classmethod
+    def at_this_scene(cls, window: AzurLaneWindow) -> bool:
+        points_to_check = get_eigen(
+            ASSETS["AfterBattle"]["Checkpoint_01"]["Label_Checkpoint"],
         )
 
         return window.compare_with_pixel(points_to_check)
@@ -896,8 +1080,8 @@ class SceneBattleCheckpoint(Scene):
         window.left_click((1850, 200), sleep=.5)
 
 
-class SceneBattleGetItems(Scene):
-    name = Namespace.scene_battle_get_items
+class SceneGetItems(Scene):
+    name = Namespace.scene_get_items
 
     @property
     def bounds(self) -> dict:
@@ -907,12 +1091,16 @@ class SceneBattleGetItems(Scene):
         return destinations
 
     @classmethod
-    def _is_at_this_scene(cls, window: AzurLaneWindow) -> bool:
-        points_to_check = get_eigen(
-            ASSETS["AfterBattle"]["GetItems"]["Label_GetItems"],
+    def at_this_scene(cls, window: AzurLaneWindow) -> bool:
+        points_to_check1 = get_eigen(
+            ASSETS["Popup_GetItems"]["Label_GetItems1"],
         )
 
-        return window.compare_with_pixel(points_to_check)
+        points_to_check2 = get_eigen(
+            ASSETS["Popup_GetItems"]["Label_GetItems2"],
+        )
+
+        return window.compare_with_pixel(points_to_check1) or window.compare_with_pixel(points_to_check2)
 
     @staticmethod
     def goto_battle_results(window: AzurLaneWindow):
@@ -930,7 +1118,7 @@ class SceneBattleResult(Scene):
         return destinations
 
     @classmethod
-    def _is_at_this_scene(cls, window: AzurLaneWindow) -> bool:
+    def at_this_scene(cls, window: AzurLaneWindow) -> bool:
         points_to_check = get_eigen(
             ASSETS["AfterBattle"]["BattleResult"]["Button_DamageReport"],
             ASSETS["AfterBattle"]["BattleResult"]["Button_Ensure"],
@@ -954,7 +1142,7 @@ class PopupCampaignReward(Scene):
         return destinations
 
     @classmethod
-    def _is_at_this_scene(cls, window: AzurLaneWindow) -> bool:
+    def at_this_scene(cls, window: AzurLaneWindow) -> bool:
         points_to_check_1 = get_eigen(
             ASSETS["CampaignChapter"]["Label_TotalRewards_without_META"],
             ASSETS["CampaignChapter"]["Label_TotalRewards_without_META"]["Button_GoAgain"],
@@ -971,8 +1159,12 @@ class PopupCampaignReward(Scene):
         window.left_click((1460, 115), sleep=1.5)  # just a random empty space
 
 
-scene_map = {
+scene_names = {
+    Namespace.popup_commission: PopupCommission,
+    Namespace.scene_delegation_list: SceneDelegationList,
+
     Namespace.scene_main: SceneMain,
+    Namespace.scene_delegation_success: SceneDelegationSuccess,
 
     Namespace.scene_anchor_aweigh: SceneAnchorAweigh,
     Namespace.popup_rescue_sos: PopupRescueSOS,
@@ -988,12 +1180,21 @@ scene_map = {
 
     Namespace.scene_battle: SceneBattle,
     Namespace.popup_get_ship: PopupGetShip,
-    Namespace.scene_battle_checkpoint: SceneBattleCheckpoint,
-    Namespace.scene_battle_get_items: SceneBattleGetItems,
+    Namespace.scene_battle_checkpoint_00: SceneBattleCheckpoint00,
+    Namespace.scene_battle_checkpoint_01: SceneBattleCheckpoint01,
+    Namespace.scene_get_items: SceneGetItems,
     Namespace.scene_battle_result: SceneBattleResult,
+    Namespace.popup_info_auto_battle: PopupInfoAutoBattle,
+    Namespace.scene_battle_formation: SceneBattleFormation,
 }
-scenes_maybe = [
-    SceneMain, SceneAnchorAweigh,
+
+scenes_registered = [
+    PopupCommission,
+    SceneDelegationList,
+
+    SceneMain,
+    SceneAnchorAweigh,
+    SceneDelegationSuccess,
 
     SceneCampaign,
     PopupGetShip,
@@ -1007,9 +1208,11 @@ scenes_maybe = [
 
     SceneBattle,
     SceneBattleFormation,
-    SceneBattleCheckpoint,
-    SceneBattleGetItems,
+    SceneBattleCheckpoint00,
+    SceneBattleCheckpoint01,
+    SceneGetItems,
     SceneBattleResult,
 
     PopupRescueSOS,
+    PopupInfoAutoBattle,
 ]

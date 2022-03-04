@@ -1,7 +1,13 @@
+from pathlib import Path
+
 from matplotlib import pyplot as plt
 
-DIR_BASE = "D:/Projects/Python/JustCode/techstacks/auto_game/games/azur_lane"
-CONFIG_SCENE = "D:/Projects/Python/JustCode/techstacks/auto_game/games/azur_lane/config/scene.yaml"
+CONFIG_DIR = Path(__file__).parent
+
+DIR_BASE = CONFIG_DIR.parent.as_posix()
+CONFIG_SCENE = f"{DIR_BASE}/config/scene.yaml"
+CONFIG_DELEGATION = f"{DIR_BASE}/config/delegation.yaml"
+DIR_TESTCASE = f"{DIR_BASE}/assets/testcase"
 
 
 def close_figure(event):
@@ -9,7 +15,7 @@ def close_figure(event):
         plt.close(event.canvas.figure)
 
 
-def s(x):
-    plt.imshow(x)
+def s(img, title=""):
+    plt.imshow(img)
+    plt.title(title)
     plt.show()
-    plt.gcf().canvas.mpl_connect('key_press_event', close_figure)
