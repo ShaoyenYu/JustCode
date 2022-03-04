@@ -2,8 +2,8 @@ import time
 from threading import Thread
 
 from pynput import keyboard
-from pynput.keyboard import Key, Controller as KeyboardController
-from pynput.mouse import Controller as MouseController, Button
+from pynput.keyboard import Key, Controller as KeyboardController, Listener as KeyboardListener
+from pynput.mouse import Controller as MouseController, Listener as MouseListener, Button
 
 
 class Shared:
@@ -24,22 +24,35 @@ def click_left_button():
 class EventHandler:
     def __init__(self):
         self._listener_keyboard = None
-        self.kb_controller = KeyboardController()
-        self.mouse_thread = Thread(target=click_left_button)
-        self.mouse_thread.start()
+        self._listener_mouse = None
+
+        self.ctl_keyboard = KeyboardController()
+        self.ctl_mouse = None
+
+        self.control_thread_mouse = Thread(target=click_left_button)
+        self.control_thread_mouse.start()
 
     def start(self):
-        self._listener_keyboard = keyboard.Listener(on_release=self.on_keyboard_release)
+        self._listener_keyboard = KeyboardListener(on_release=self.on_keyboard_release)
         self._listener_keyboard.start()
+        if input("please input \"MOUSE\" to start mouse function:\n") == "MOUSE":
+            self._listener_mouse = MouseListener(on_click=self.on_click)
+            self._listener_mouse.start()
+            self.ctl_mouse = MouseController()
+
+    def on_click(self, x, y, button, pressed):
+        if (button == Button.x2) and (not pressed):
+            self.ctl_keyboard.press(Key.space)
+            self.ctl_keyboard.release(Key.space)
 
     def on_keyboard_release(self, key):
         if key is keyboard.Key.f2:
             if not Shared.is_pressed_f2:
                 Shared.is_pressed_f2 = True
-                self.kb_controller.press(Key.space)
+                self.ctl_keyboard.press(Key.space)
             else:
                 Shared.is_pressed_f2 = False
-                self.kb_controller.release(Key.space)
+                self.ctl_keyboard.release(Key.space)
 
         if key is keyboard.Key.f3:
             Shared.is_pressed_f3 = not Shared.is_pressed_f3
@@ -47,10 +60,10 @@ class EventHandler:
         if key is keyboard.Key.f4:
             if not Shared.is_pressed_f4:
                 Shared.is_pressed_f4 = True
-                self.kb_controller.press("f")
+                self.ctl_keyboard.press("f")
             else:
                 Shared.is_pressed_f4 = False
-                self.kb_controller.release("f")
+                self.ctl_keyboard.release("f")
 
 
 def main():
