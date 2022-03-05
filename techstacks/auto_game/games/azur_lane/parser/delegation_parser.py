@@ -6,9 +6,9 @@ from Levenshtein import ratio
 from paddleocr import PaddleOCR
 
 from lib.dummy_paddleocr import load_recognizer
-from techstacks.auto_game.games.azur_lane.config import CONFIG_DELEGATION, s
+from techstacks.auto_game.games.azur_lane.config import CONFIG_DELEGATION
 from techstacks.auto_game.games.azur_lane.controller.scene import (
-    read_template, match_multi_template, ASSETS, debug_show
+    am, match_multi_template, debug_show
 )
 from techstacks.auto_game.util import gen_key, logging
 from util.io import load_yaml
@@ -104,9 +104,8 @@ def parse_delegation_dict(delegation: Dict) -> Delegation:
 
 class Parser:
     templates = {
-        "label_level": read_template(ASSETS["Popup_Commission"]["Scene_DelegationList"]["Label_Level"]["__Image"]),
-        "label_processing": read_template(
-            ASSETS["Popup_Commission"]["Scene_DelegationList"]["Label_Level"]["Label_Processing"]["__Image"]),
+        "label_level": am.template("Popup_Commission.Scene_DelegationList.Label_Level"),
+        "label_processing": am.template("Popup_Commission.Scene_DelegationList.Label_Level.Label_Processing"),
     }
     ocr_paddle_numeric = load_recognizer()
     ocr_paddle = PaddleOCR(show_log=False)
@@ -176,7 +175,7 @@ class Parser:
         locs = cls.parse_label_level(image_ori) if locs is None else locs
 
         # use label level as an anchor, to locate other components
-        x_rel, y_rel = ASSETS["Popup_Commission"]["Scene_DelegationList"]["Label_Level"]["Label_Processing"]["__RelPos"]
+        x_rel, y_rel = am.resolve("Popup_Commission.Scene_DelegationList.Label_Level.Label_Processing", "RelPos")
         height, width = cls.templates["label_processing"].shape[:2]
         for loc in locs:
             match_ratio = cv2.matchTemplate(
@@ -213,5 +212,6 @@ if __name__ == '__main__':
         for value, parsed_value in zip(values, parsed_values):
             try:
                 assert value == parsed_value
+                print(f"PASS: {value, parsed_value}")
             except AssertionError:
-                print(f"{value, parsed_value}")
+                print(f"FAILED: {value, parsed_value}")
