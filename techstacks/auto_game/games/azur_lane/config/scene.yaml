@@ -41,7 +41,7 @@ Popup_Commission: &Popup_Commission
       [ 44, 476, 16777215 ], [ 44, 688, 16777215 ], [ 44, 900, 16777215 ],
     ]
   Label_Mission:
-    __Image: !!str /assets/commission/Label_Mission.png
+    __Image: !!str /assets/commission/delegation/Label_Mission.png
   Scene_DelegationList: *Scene_DelegationList
   Scene_DelegationSuccess:
     __Eigen: [
@@ -141,7 +141,7 @@ AnchorAweigh:
 
   Button_RescueSOS:
     __Rect: [ [ 1534, 668, 7565675 ], [ 1617, 751, 8089467 ], ]
-    __Img: [ [ 1567, 692, 5393738 ], [ 1599, 734, 5921114 ], ]
+    __ImageRect: [ [ 1567, 692, 5393738 ], [ 1599, 734, 5921114 ], ]
 
     Popup_RescueSOS:
       __Eigen: [
@@ -208,7 +208,7 @@ CampaignChapter:
     Button_BackToAnchorAweigh:
       __Rect: [ [ 46, 46, 15897689 ], [ 122, 117, 16314852 ], ]
     ChapterNo:
-      __Img: [ [ 319, 104, 4340793 ], [ 699, 156, 6507842 ], ]
+      __ImageRect: [ [ 319, 104, 4340793 ], [ 699, 156, 6507842 ], ]
     Chapter_03:
       3-5:
         __Rect: [ [ 1069, 764, 11913182 ], [ 1219, 896, 12254462 ] ]
@@ -328,7 +328,7 @@ Campaign:
       [ 1738, 1022, 16777215 ], # 按钮 - 迎击
     ]
   Label_FleetNo:
-    __Img: [ [ 313, 108, 4337705 ], [ 343, 157, 4337705 ], ]
+    __ImageRect: [ [ 313, 108, 4337705 ], [ 343, 157, 4337705 ], ]
   Button_BackToMain: *Button_BackToMain
   Button_Strategy:
     State_Folded:

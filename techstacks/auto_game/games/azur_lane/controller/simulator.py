@@ -2,6 +2,8 @@ import random
 import time
 from typing import Dict, Tuple, Union
 
+import numpy as np
+
 from techstacks.auto_game.games.azur_lane.config import CONFIG_SCENE
 from techstacks.auto_game.games.azur_lane.controller import scene
 from util.io import load_yaml
@@ -20,12 +22,21 @@ class AzurLaneWindow(Window):
         self.scene_prev = self.scene_cur = scene.SceneUnknown(self)
         self.debug = kwargs.get("debug", False)
 
+    @staticmethod
+    def gen_random_xy(lt, rb):
+        x, y = (random.randint(lt[0], rb[0]), random.randint(lt[1], rb[1])) if random else (lt[0], rb[0])
+        return x, y
+
     def left_click(self, coordinate: Union[Tuple[int, int], Dict[str, list]], sleep=0, add_random=True):
         if isinstance(coordinate, dict):
-            lt, rb = coordinate["__Rect"][:2]
-            x, y = (random.randint(lt[0], rb[0]), random.randint(lt[1], rb[1])) if random else (lt[0], rb[0])
-        elif isinstance(coordinate, tuple):
-            x, y = coordinate
+            x, y = self.gen_random_xy(*coordinate["__Rect"][:2])
+        elif isinstance(coordinate, (tuple, list)):
+            if isinstance(coordinate[0], (tuple, list)):
+                x, y = self.gen_random_xy(*coordinate[:2])
+            elif isinstance(coordinate[0], (np.integer, int)):
+                x, y = coordinate
+            else:
+                raise NotImplementedError
         else:
             raise NotImplementedError
         super().left_click((x, y), sleep)
