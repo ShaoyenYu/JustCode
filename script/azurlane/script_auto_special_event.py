@@ -191,6 +191,19 @@ def loop_farm():
                     width=1397 - 547, height=982 - 98,
                     save_path=f"{RESULT_DIR}/{dt.datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
                 )
+                w2.left_click((1850, 300))  # just an empty space
+                time.sleep(1)
+                Config.is_outside_campaign = True
+            elif scene.PopupCampaignRewardWithMeta.at_this_scene(w1):
+                time.sleep(5)
+                log("Saving Rewards...")
+                w1.screenshot(
+                    x=444, y=98,
+                    width=1504 - 444, height=982 - 98,
+                    save_path=f"{RESULT_DIR}/{dt.datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+                )
+                w2.left_click((1850, 300))  # just an empty space
+                time.sleep(1)
                 Config.is_outside_campaign = True
             elif scene.SceneMain.at_this_scene(w1):
                 operator.scene_main_to_stage()

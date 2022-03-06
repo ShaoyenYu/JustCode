@@ -208,6 +208,7 @@ class Namespace:
     popup_fleet_selection_duty = "Popup.FleetSelection.Duty"
 
     popup_campaign_reward = "Popup.Campaign.Reward"
+    popup_campaign_reward_meta = "Popup.Campaign.RewardWithMeta"
 
     scene_campaign_chapter = "Scene.Campaign.Chapter"
 
@@ -1188,20 +1189,38 @@ class PopupCampaignReward(Scene):
 
     @classmethod
     def at_this_scene(cls, window: AzurLaneWindow) -> bool:
-        points_to_check_1 = am.eigens(
+        points_to_check = am.eigens(
             "CampaignChapter.Label_TotalRewards_without_META",
             "CampaignChapter.Label_TotalRewards_without_META.Button_GoAgain",
         )
-        points_to_check_2 = am.eigens(
-            "CampaignChapter.Label_TotalRewards_with_META",
-            "CampaignChapter.Label_TotalRewards_with_META.Button_GoAgain",
-        )
-
-        return window.compare_with_pixel(points_to_check_1) or window.compare_with_pixel(points_to_check_2)
+        return cls.compare_with_pixels(window, points_to_check)
 
     @staticmethod
     def goto_campaign(window: AzurLaneWindow):
         window.left_click((1460, 115), sleep=1.5)  # just a random empty space
+
+
+class PopupCampaignRewardWithMeta(Scene):
+    name = Namespace.popup_campaign_reward_meta
+
+    @property
+    def bounds(self) -> dict:
+        destinations = {
+            Namespace.scene_campaign: self.goto_campaign
+        }
+        return destinations
+
+    @classmethod
+    def at_this_scene(cls, window: AzurLaneWindow) -> bool:
+        points_to_check = am.eigens(
+            "CampaignChapter.Label_TotalRewards_with_META",
+            "CampaignChapter.Label_TotalRewards_with_META.Button_GoAgain",
+        )
+        return cls.compare_with_pixels(window, points_to_check)
+
+    @staticmethod
+    def goto_campaign(window: AzurLaneWindow):
+        window.left_click((1850, 300), sleep=1.5)  # just a random empty space
 
 
 scene_names = {
@@ -1222,6 +1241,7 @@ scene_names = {
     Namespace.popup_fleet_selection_fixed: PopupFleetSelectionFixed,
     Namespace.popup_fleet_selection_duty: PopupFleetSelectionDuty,
     Namespace.popup_campaign_reward: PopupCampaignReward,
+    Namespace.popup_campaign_reward_meta: PopupCampaignRewardWithMeta,
 
     Namespace.scene_battle: SceneBattle,
     Namespace.popup_get_ship: PopupGetShip,
@@ -1250,6 +1270,7 @@ scenes_registered = [
     PopupFleetSelectionDuty, PopupFleetSelectionFixed, PopupFleetSelectionArbitrate, PopupFleetSelection,
 
     PopupCampaignReward,
+    PopupCampaignRewardWithMeta,
 
     SceneBattle,
     SceneBattleFormation,
