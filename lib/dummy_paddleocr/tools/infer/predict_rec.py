@@ -19,3 +19,8 @@ class CustomTextRecognizer(TextRecognizer):
 
     def set_valid_chars(self, chars: str):
         self.postprocess_op.set_valid_chars(chars)
+
+    def __call__(self, img_list):
+        if not isinstance(img_list, list):
+            img_list = [img_list]
+        return super().__call__(img_list)[0]
