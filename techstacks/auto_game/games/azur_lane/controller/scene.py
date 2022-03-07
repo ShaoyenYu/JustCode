@@ -1,5 +1,4 @@
 import itertools
-import re
 import time
 from abc import abstractmethod
 from typing import Tuple, Union, Any, Optional
@@ -7,16 +6,20 @@ from typing import Tuple, Union, Any, Optional
 import cv2
 import numpy as np
 import pytesseract
+from Levenshtein import ratio
 from cv2 import (
     TM_CCOEFF_NORMED, TM_CCORR_NORMED, TM_SQDIFF, TM_SQDIFF_NORMED,
 )
 from matplotlib import pyplot as plt
 from scipy.spatial import distance_matrix
 
+from lib.dummy_paddleocr import load_recognizer
 from techstacks.auto_game.games.azur_lane.config import CONFIG_SCENE, DIR_BASE
 from techstacks.auto_game.games.azur_lane.controller.simulator import AzurLaneWindow
 from util.io import load_yaml
 from util.io.common import hash_clscache
+
+ocr_paddle = load_recognizer()
 
 
 class AssetManager:
@@ -172,6 +175,30 @@ def ocr_zhtw(img, config):
     data = pytesseract.image_to_string(thresh, lang='chi_tra', config=config)
 
     return data
+
+
+def binarize(image: np.ndarray, thresh=127, maxval=255, type=cv2.THRESH_BINARY_INV):
+    image_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+    _, image_bin = cv2.threshold(image_gray, thresh, maxval, type)
+    return image_bin
+
+
+def slice_image(image, redundant_pixel=5):
+    left = image.argmin(axis=1)
+    right = image[:, ::-1].argmin(axis=1)
+    left = left[left > 0].min() - redundant_pixel
+    right = image.shape[1] - right[right > 0].min() + redundant_pixel
+    return image[:, left: right]
+
+
+def find_most_match(text, phrases):
+    val_max = 0
+    most_match = None
+    for phrase in phrases:
+        if (val_cur := ratio(text, phrase)) >= val_max:
+            val_max = val_cur
+            most_match = phrase
+    return most_match, val_max
 
 
 def combine_similar_points(points, threshold=50):
@@ -491,6 +518,7 @@ class SceneAnchorAweigh(Scene):
     def bounds(self) -> dict:
         destinations = {
             Namespace.scene_main: goto_scene_main,
+            Namespace.scene_campaign_chapter: self.goto_scene_campaign_chapter,
             Namespace.popup_rescue_sos: self.open_popup_rescue_sos
         }
         return destinations
@@ -505,6 +533,10 @@ class SceneAnchorAweigh(Scene):
             "AnchorAweigh.Label_WeighAnchor",
         )
         return window.compare_with_pixel(points_to_check, threshold=1)
+
+    @staticmethod
+    def goto_scene_campaign_chapter(window: AzurLaneWindow):
+        window.left_click(am.rect("AnchorAweigh.Button_MainBattleLine"), sleep=1)
 
     @staticmethod
     def open_popup_rescue_sos(window: AzurLaneWindow):
@@ -566,7 +598,7 @@ class SceneCampaignChapter(Scene):
         "所羅門的噩夢上": 4,
         "所羅門的噩夢中": 5,
         "所羅門的噩夢下": 6,
-        "混沐之夜": 7,
+        "混沌之夜": 7,
         "科曼多爾海戰": 8,
         "庫拉灣海戰": 9,
         "科隆班加拉島夜戰": 10,
@@ -574,6 +606,7 @@ class SceneCampaignChapter(Scene):
         "馬里亞納風雲上": 12,
         "馬里亞納風雲下": 13,
     }
+    unique_chars = "".join(sorted(set("".join(map_chapter_names.keys()))))
 
     def __init__(self, window: AzurLaneWindow, scene_from=None):
         super().__init__(window, scene_from)
@@ -601,30 +634,31 @@ class SceneCampaignChapter(Scene):
 
     def recognize_chapter_title(self, max_retry=20) -> Union[int, None]:
         chapter_title = self._recognize_chapter_title(self.window, max_retry)
-        print(chapter_title)
         self.chapter_no = None or self.map_chapter_names.get(chapter_title)
         return self.chapter_no
 
     @classmethod
     def _recognize_chapter_title(cls, window: AzurLaneWindow, max_retry=20) -> Union[int, None]:
-        x, y, w, h = am.get_image_xywh("CampaignChapter.Chapters.ChapterNo")
-        image = window.screenshot(x, y, w, h)
         try:
-            res = ocr_zhtw(image, config="--psm 7 --oem 2")
-            res = re.sub("\s", "", res)
+            x, y, w, h = am.get_image_xywh("CampaignChapter.Chapters.ChapterNo")
+            image_processed = slice_image(binarize(window.screenshot(x, y, w, h), thresh=128))
+
+            ocr_paddle.set_valid_chars(cls.unique_chars)
+            ocr_text = ocr_paddle(cv2.cvtColor(image_processed, cv2.COLOR_GRAY2RGB))[0][0]
+            res = find_most_match(ocr_text, cls.map_chapter_names.keys())[0]
+
         except:
             res = None
             for _ in range(max_retry):
                 if res := cls._recognize_chapter_title(window, max_retry=0) is not None:
                     break
+
         finally:
             return res
 
     @staticmethod
     def open_stage_popup(window, chapter_no=None) -> bool:
-        if chapter_no == "3-5":
-            window.left_click(am.rect("CampaignChapter.Chapters.Chapter_03.3-5"))
-        return False
+        window.left_click(am.rect(f"CampaignChapter.Chapters.Stages.{chapter_no}"))
 
     @staticmethod
     def go_back_to_anchor_aweigh(window) -> bool:

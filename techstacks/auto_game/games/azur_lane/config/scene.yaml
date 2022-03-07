@@ -21,12 +21,12 @@ Scene_DelegationList: &Scene_DelegationList
   Label_Level:
     __Image: !!str /assets/commission/delegation/Label_Level.png
     Label_LevelNo:
-      __RelPos: []
+      __RelPos: [ ]
     Label_TimeLimit:
       __RelPos
     Label_Processing:
       __Image: !!str /assets/commission/delegation/Label_Processing.png
-      __RelPos: [260, 134]
+      __RelPos: [ 260, 134 ]
   Label_Oil:
     __Image: !!str /assets/commission/delegation/Label_Oil.png
 
@@ -161,7 +161,6 @@ AnchorAweigh:
         State_SignalFound:
           __Eigen: [ [ 1261, 421, 16777215 ], [ 1304, 421, 16777215 ], [ 1276, 446, 16777215 ], ]
 
-
   Icon_Resources: *Icon_Resources
 
 CampaignChapter:
@@ -173,6 +172,7 @@ CampaignChapter:
       [ 588, 130, 16777215 ], [ 606, 152, 16777215 ],[ 606, 165, 16777215 ], # "合"字
       [ 854, 139, 16777215 ], [ 861, 138, 16777215 ], [ 845, 160, 16777215 ], # "励"字
     ]
+    __ImageRect: [ [ 547, 98, 0 ], [ 1397, 982, 0 ] ]
     Button_GoAgain: # 按钮 - 再次前往
       __Rect: [
         [ 1165, 902, 10249529 ], [ 1369, 960, 14587482 ],
@@ -194,6 +194,8 @@ CampaignChapter:
       [ 482, 128, 16777215 ], [ 474, 153, 16777215 ],[ 499, 165, 16777215 ], # "合"字
       [ 718, 130, 16777215 ], [ 747, 137, 16777215 ], [ 753, 165, 16777215 ], # "励"字
     ]
+    __ImageRect: [ [ 444, 98, 0 ], [ 1504, 982, 0 ] ]  # 用于截图战利品
+
     Button_GoAgain: # 按钮 - 再次前往
       __Rect: [
         [ 1285, 912, 10840377 ], [ 1464, 955, 14587482 ],
@@ -208,10 +210,12 @@ CampaignChapter:
     Button_BackToAnchorAweigh:
       __Rect: [ [ 46, 46, 15897689 ], [ 122, 117, 16314852 ], ]
     ChapterNo:
-      __ImageRect: [ [ 319, 104, 4340793 ], [ 699, 156, 6507842 ], ]
-    Chapter_03:
+      __ImageRect: [ [ 319, 104, 4340793 ], [ 699, 156, 6507842 ], ]  # 用于截图战利品
+    Stages:
       3-5:
         __Rect: [ [ 1069, 764, 11913182 ], [ 1219, 896, 12254462 ] ]
+      13-4:
+        __Rect: [ [ 1341, 801, 5558255 ], [ 1636, 865, 4336673 ] ]
 
 PopupStageInfo:
   Label_WeighAnchor:
