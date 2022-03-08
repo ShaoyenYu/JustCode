@@ -1,7 +1,8 @@
-import requests
 import re
-from util.win32.common import set_text
 
+import requests
+
+from util.win32.common import set_text
 
 session = requests.session()
 session.headers = {
@@ -10,8 +11,8 @@ session.headers = {
     "Proxy-Connection": "keep-alive",
 }
 session.proxies = {
-    "https": "socks5://127.0.0.1:9527",
-    "http": "socks5://127.0.0.1:9527"
+    "https": "socks5://127.0.0.1:10808",
+    "http": "socks5://127.0.0.1:10808"
 }
 
 
@@ -23,7 +24,7 @@ def search(serie_no=None):
     )).upper()
 
     print("parsing...")
-    base_url = "http://www.h28o.com/cn"
+    base_url = "http://www.javlibrary.com/cn"
     api_search, api_detail = "vl_searchbyid.php?keyword=", "?v="
 
     api = f"{base_url}/{api_search}{serie_no}"
