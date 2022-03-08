@@ -211,7 +211,7 @@ class ScreenUtilityMixin:
         raise NotImplementedError
 
 
-class ControllerMixin:
+class MouseMixin:
     def __init__(self, hwnd):
         self.hwnd = hwnd
 
@@ -223,8 +223,50 @@ class ControllerMixin:
         if sleep > 0:
             time.sleep(sleep)
 
+    def left_drag(self, start, end, duration, interval=.05):
+        """
 
-class Window(ScreenUtilityMixin, ControllerMixin):
+        Args:
+            start: Tuple[int, int]
+                start position;
+            end: Tuple[int, int]
+                end position;
+            duration: Union[float, int]
+                total time to execute drag;
+            interval: Union[float, int]
+                interval to move mouse(should less than duration)
+
+        Returns:
+
+        """
+        pos_start = pos_next = win32api.MAKELONG(*start)
+        pos_end = win32api.MAKELONG(*end)
+
+        offset_x, offset_y = end[0] - start[0], end[1] - start[1]
+        cur_times, total_times = 0, int(duration // interval)
+        remain_interval = duration - total_times * interval
+
+        dx, dy = offset_x // total_times, offset_y // total_times
+
+        dxy = dx + dy * (2 ** 16)
+        remain_xy = (offset_x % total_times) + (offset_y % total_times) * (2 ** 16)
+
+        win32api.PostMessage(self.hwnd, win32con.WM_LBUTTONDOWN, win32con.MK_LBUTTON, pos_start)
+        for _ in range(total_times):
+            pos_next += dxy
+            win32api.PostMessage(self.hwnd, win32con.WM_MOUSEMOVE, win32con.MK_LBUTTON, pos_next)
+            time.sleep(interval)
+
+        if remain_xy > 0:
+            pos_next += remain_xy
+            win32api.PostMessage(self.hwnd, win32con.WM_MOUSEMOVE, win32con.MK_LBUTTON, pos_next)
+
+        if remain_interval > 0:
+            time.sleep(remain_interval)
+        win32api.PostMessage(self.hwnd, win32con.WM_LBUTTONUP, 0, pos_end)
+
+
+class Window(ScreenUtilityMixin, MouseMixin):
     def __init__(self, **kwargs):
         """
 
@@ -244,7 +286,7 @@ class Window(ScreenUtilityMixin, ControllerMixin):
         self.get_window_rect()
 
         ScreenUtilityMixin.__init__(self, self.hwnd)
-        ControllerMixin.__init__(self, self.hwnd)
+        MouseMixin.__init__(self, self.hwnd)
 
     def get_window_text(self):
         return win32gui.GetWindowText(self.hwnd)
