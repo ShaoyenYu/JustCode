@@ -120,7 +120,7 @@ class Parser:
     }
 
     @classmethod
-    def parse_label_level(cls, image_ori):
+    def parse_label_level_locs(cls, image_ori):
         locs = match_multi_template(
             image_ori, cls.templates["label_level"], method=cv2.TM_CCOEFF_NORMED, thresh=.85, thresh_dedup=50
         )
@@ -137,7 +137,7 @@ class Parser:
         Returns:
 
         """
-        locs = cls.parse_label_level(image_ori) if locs is None else locs
+        locs = cls.parse_label_level_locs(image_ori) if locs is None else locs
 
         # use label level as an anchor, to locate other components
         x_rel, y_rel, width, height = cls.rel_pos["label_level"]["label_time_limit"]
@@ -172,7 +172,7 @@ class Parser:
         Returns:
 
         """
-        locs = cls.parse_label_level(image_ori) if locs is None else locs
+        locs = cls.parse_label_level_locs(image_ori) if locs is None else locs
 
         # use label level as an anchor, to locate other components
         x_rel, y_rel = am.resolve("Popup_Commission.Scene_DelegationList.Label_Level.Label_Processing", "RelPos")
@@ -208,8 +208,11 @@ if __name__ == '__main__':
     dir_test = Path(f"{DIR_TESTCASE}/commission/delegation/label_time_limit")
     test_values = load_yaml(dir_test / "test_values.yaml")
     for file_name, values in test_values.items():
-        parsed_values = Parser.parse_time_limit(cv2.imread(f"{dir_test}/{file_name}")[:, :, ::-1])
-        for value, parsed_value in zip(values, parsed_values):
+        img = cv2.imread(f"{dir_test}/{file_name}")[:, :, ::-1]
+        parsed_values = Parser.parse_time_limit(img)
+        Parser.parse_label_level_locs(img)
+        Parser.parse_status(img)
+        for value, parsed_value in zip(values["time_limit"], parsed_values):
             try:
                 assert value == parsed_value
                 print(f"PASS: {value, parsed_value}")
