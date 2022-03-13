@@ -1,5 +1,6 @@
 import datetime as dt
 import time
+from collections import deque
 from pathlib import Path
 from threading import Event
 
@@ -23,7 +24,9 @@ class TaskFarmChapter(KillableThread):
         self.refresh_handler = None
         self.cur_chapter = None
 
+        self.team_01s = deque([4, 5])
         self.target_stage = "13-4"
+
         self.result_dir = f"{BASE_DIR}/{EVENT_NAME}/{self.target_stage}"
         Path(self.result_dir).mkdir(parents=True, exist_ok=True)
         self.cur_farm_time = 0
@@ -92,8 +95,9 @@ class TaskFarmChapter(KillableThread):
             self.simulator.window_ctl.scene_cur.goto(scene.Namespace.popup_fleet_selection_arbitrate)
 
         if self.simulator.window_ctl.scene_cur.at(scene.PopupFleetSelectionArbitrate):
-            self.simulator.window_ctl.scene_cur.choose_team(team_one=5, team_two=6)
-            self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_campaign)
+            self.team_01s.append(cur_team := self.team_01s.popleft())
+            self.simulator.window_ctl.scene_cur.choose_team(team_one=cur_team, team_two=6)
+            # self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_campaign)
 
     def wait_for_farming(self):
         self.can_run.wait()
