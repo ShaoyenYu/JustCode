@@ -1,9 +1,8 @@
 import time
-from threading import Event
 
 from techstacks.auto_game.games.azur_lane.controller import scene
 from techstacks.auto_game.games.azur_lane.controller.simulator import Bluestack
-from util.concurrent import KillableThread
+from util.concurrent import KillableThread, PauseEventHandler
 
 
 class TaskFarmSubmarineSOS(KillableThread):
@@ -13,22 +12,16 @@ class TaskFarmSubmarineSOS(KillableThread):
         self.refresh = refresh_scene
         self.simulator = simulator
         self.simulator.window_ctl.scene_cur = scene.SceneUnknown(self.simulator.window_ctl)
-        self.can_run = Event()
+        self.event_handler = PauseEventHandler(self, "can_run", "can_run_after_battle")
         self.refresh_handler = None
 
     def start(self) -> None:
         super().start()
         self.simulator.window_ctl.scene_cur.detect_scene()
-        self.can_run.set()
-        if self.refresh:
-            self.refresh_handler = KillableThread(target=self.refresh_scene)
-            self.refresh_handler.start()
+        self.refresh_handler = KillableThread(target=self.refresh_scene)
+        self.refresh_handler.start()
 
-    def pause(self):
-        self.can_run.clear()
-
-    def resume(self):
-        self.can_run.set()
+        self.event_handler.resume("can_run")
 
     def stop(self):
         if self.refresh and self.refresh_handler.is_alive():
@@ -39,17 +32,15 @@ class TaskFarmSubmarineSOS(KillableThread):
     def refresh_scene(self):
         while True:
             self.simulator.window_ctl.scene_cur.detect_scene()
-            print(self.simulator.window_ctl.scene_cur)
             time.sleep(1)
-            # print(f"CUR: {self.simulator.window_ctl.scene_cur}")
 
     def from_main_to_anchor_aweigh(self):
-        self.can_run.wait()
+        self.event_handler.wait("can_run")
         if self.simulator.window_ctl.scene_cur.at(scene.SceneMain):
             self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_anchor_aweigh)
 
     def from_anchor_aweigh_to_popup_rescue_sos(self):
-        self.can_run.wait()
+        self.event_handler.wait("can_run")
         if self.simulator.window_ctl.scene_cur.at(scene.SceneAnchorAweigh):
             if (rescue_no := self.simulator.window_ctl.scene_cur.recognize_rescue_times()) > 0:
                 print(f"remain rescue times: {rescue_no}")
@@ -57,7 +48,7 @@ class TaskFarmSubmarineSOS(KillableThread):
             return rescue_no
 
     def from_popup_rescue_sos_to_campaign_chapter(self):
-        self.can_run.wait()
+        self.event_handler.wait("can_run")
         if self.simulator.window_ctl.scene_cur.at(scene.PopupRescueSOS):
             if self.simulator.window_ctl.scene_cur.is_signal_found():
                 print("signal found")
@@ -68,7 +59,7 @@ class TaskFarmSubmarineSOS(KillableThread):
                 self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_campaign_chapter)
 
     def from_campaign_chapter_to_stage_rescue_sos(self):
-        self.can_run.wait()
+        self.event_handler.wait("can_run")
         if self.simulator.window_ctl.scene_cur.at(scene.SceneCampaignChapter):
             has_arrived = self.simulator.window_ctl.scene_cur.goto(scene.Namespace.popup_stage_info, sleep=1,
                                                                    chapter_no="3-5")
@@ -76,7 +67,7 @@ class TaskFarmSubmarineSOS(KillableThread):
                 self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_anchor_aweigh)
 
     def from_stage_rescue_sos_to_campaign(self):
-        self.can_run.wait()
+        self.event_handler.wait("can_run")
         if self.simulator.window_ctl.scene_cur.at(scene.PopupStageInfo):
             self.simulator.window_ctl.scene_cur.goto(scene.Namespace.popup_fleet_selection_arbitrate)
 
@@ -85,20 +76,20 @@ class TaskFarmSubmarineSOS(KillableThread):
             self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_campaign)
 
     def from_campaign_to_formation(self):
-        self.can_run.wait()
+        self.event_handler.wait("can_run")
         if self.simulator.window_ctl.scene_cur.at(scene.SceneCampaign):
             if self.simulator.window_ctl.scene_cur.attack_enemies():
                 time.sleep(8)
 
     def from_formation_to_battle(self):
-        self.can_run.wait()
+        self.event_handler.wait("can_run")
         if self.simulator.window_ctl.scene_cur.at(scene.PopupInfoAutoBattle):
             self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_battle_formation)
         if self.simulator.window_ctl.scene_cur.at(scene.SceneBattleFormation):
             self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_battle)
 
     def from_checkpoint_to_campaign(self):
-        self.can_run.wait()
+        self.event_handler.wait("can_run")
         if self.simulator.window_ctl.scene_cur.at(scene.PopupGetShip):
             self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_campaign)
             time.sleep(10)
@@ -118,7 +109,7 @@ class TaskFarmSubmarineSOS(KillableThread):
             time.sleep(10)
 
     def from_campaign_info_to_campaign(self):
-        self.can_run.wait()
+        self.event_handler.wait("can_run")
         if self.simulator.window_ctl.scene_cur.at(scene.PopupCampaignInfo):
             self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_campaign)
 
