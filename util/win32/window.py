@@ -223,7 +223,7 @@ class MouseMixin:
         if sleep > 0:
             time.sleep(sleep)
 
-    def left_drag(self, start, end, duration, interval=.05):
+    def left_drag(self, start, end, duration, interval=.05, sleep=0):
         """
 
         Args:
@@ -248,7 +248,7 @@ class MouseMixin:
 
         dx, dy = offset_x // total_times, offset_y // total_times
 
-        dxy = dx + dy * (2 ** 16)
+        dxy = dx + dy * (2 ** 16)  # transform x, y into 32-bit integer, higher 16 bit is y, and lower 16 bit is x.
         remain_xy = (offset_x % total_times) + (offset_y % total_times) * (2 ** 16)
 
         win32api.PostMessage(self.hwnd, win32con.WM_LBUTTONDOWN, win32con.MK_LBUTTON, pos_start)
@@ -264,6 +264,9 @@ class MouseMixin:
         if remain_interval > 0:
             time.sleep(remain_interval)
         win32api.PostMessage(self.hwnd, win32con.WM_LBUTTONUP, 0, pos_end)
+
+        if sleep > 0:
+            time.sleep(sleep)
 
 
 class Window(ScreenUtilityMixin, MouseMixin):

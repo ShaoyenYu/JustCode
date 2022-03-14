@@ -1,6 +1,7 @@
 import ctypes
 import inspect
 import threading
+from typing import Iterable, Union, Optional, Tuple
 
 
 class KillableThread(threading.Thread):
@@ -43,3 +44,45 @@ class KillableThread(threading.Thread):
         """raises SystemExit in the context of the given thread, which should
         cause the thread to exit silently (unless caught)"""
         self.raise_exc(SystemExit)
+
+
+class PauseEventHandler:
+    def __init__(self, *event_names):
+        self.events = {}
+        self.set_events(*event_names)
+
+    def set_events(self, *event_names):
+        for event_name in event_names:
+            self.events[event_name] = threading.Event()
+
+    def _broadcast(self, names=None, target=None, reverse=False):
+        if isinstance(target, bool) and reverse:
+            raise ValueError
+
+        for name, event in self._iter(names):
+            event.clear() if ((target is False) or (reverse & event.is_set())) else event.set()
+            print(f"set {name} --> {event.is_set()}")
+
+    def _iter(self, names: Optional[Union[str, Iterable[str]]]) -> Iterable[Tuple[str, threading.Event]]:
+        if names is None:
+            it = iter(self.events.items())
+        elif isinstance(names, str):
+            it = iter([(names, self.events[names])])
+        elif isinstance(names, Iterable):
+            it = ((name, self.events[name]) for name in names)
+        else:
+            raise ValueError
+        return it
+
+    def pause(self, names=None):
+        return self._broadcast(names, False)
+
+    def resume(self, names=None):
+        return self._broadcast(names, True)
+
+    def reverse(self, names=None):
+        return self._broadcast(names, reverse=True)
+
+    def wait(self, names=None, timeout: Optional[float] = None):
+        for _, event in self._iter(names):
+            event.wait(timeout=timeout)
