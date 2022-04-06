@@ -1,16 +1,15 @@
 import datetime as dt
 import time
+from pathlib import Path
 from threading import Thread
 
-import numpy as np
 from pynput import keyboard
 
 from techstacks.auto_game.games.azur_lane.config import CONFIG_SCENE
-from util.io import load_yaml
 from techstacks.auto_game.games.azur_lane.controller import scene
 from techstacks.auto_game.games.azur_lane.controller.simulator import AzurLaneWindow
+from util.io import load_yaml
 from util.win32 import win32gui
-from pathlib import Path
 
 BASE_DIR = f"{Path.home().as_posix()}/Pictures/AutoGame/AzurLane"
 EVENT_NAME = "破晓冰华"
