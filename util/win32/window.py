@@ -173,9 +173,12 @@ class ScreenUtilityMixin:
         self.cdc = self.dc.CreateCompatibleDC()  # use DeleteDC after calling
 
     def release_dc(self):
-        self.dc.DeleteDC()
-        self.cdc.DeleteDC()
-        win32gui.ReleaseDC(self.hwnd, self.hw_dc)
+        try:
+            self.dc.DeleteDC()
+            self.cdc.DeleteDC()
+            win32gui.ReleaseDC(self.hwnd, self.hw_dc)
+        except win32ui.error as e:
+            print(f"{e}: dc: {self.dc}, cdc: {self.cdc}")
 
     def screenshot(self, x=0, y=0, width=None, height=None, form="array", save_path=None):
         self.create_dc()
