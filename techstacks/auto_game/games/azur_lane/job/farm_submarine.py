@@ -72,7 +72,7 @@ class TaskFarmSubmarineSOS(KillableThread):
             self.simulator.window_ctl.scene_cur.goto(scene.Namespace.popup_fleet_selection_arbitrate)
 
         if self.simulator.window_ctl.scene_cur.at(scene.PopupFleetSelectionArbitrate):
-            self.simulator.window_ctl.scene_cur.choose_team(team_one=3, team_two=4)
+            self.simulator.window_ctl.scene_cur.choose_team(team_one=1, team_two=3)
             self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_campaign)
 
     def from_campaign_to_formation(self):
