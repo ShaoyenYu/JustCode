@@ -9,7 +9,7 @@ from techstacks.auto_game.games.azur_lane.controller import scene
 from util.io import load_yaml
 from util.win32 import win32gui
 from util.win32.monitor import set_process_dpi_awareness
-from util.win32.window import Window, parse_rbg_int2tuple
+from util.win32.window import Window, parse_rgb_int2tuple
 
 set_process_dpi_awareness(2, silent=True)
 
@@ -41,12 +41,20 @@ class AzurLaneWindow(Window):
             raise NotImplementedError
         super().left_click((x, y), sleep)
 
-    def compare_with_pixel(self, pixels, threshold=1, debug=False) -> bool:
+    def compare_with_pixel(self, pixels, threshold=1, tolerance=0, debug=False) -> bool:
         correct, wrong = 0, 0
         for x, y, rgb_int in pixels:
-            if (pixel := self.pixel_from_window(x, y, as_int=True)) != rgb_int:
+            if tolerance == 0:
+                pixel = self.pixel_from_window(x, y, as_int=True)
+                eq = (pixel == rgb_int)
+            else:
+                pixel = self.pixel_from_window(x, y, as_int=False)
+                rgb_tuple = parse_rgb_int2tuple(rgb_int)
+                eq = all((abs(x1 - x2) <= tolerance for x1, x2 in zip(pixel, rgb_tuple)))
+
+            if not eq:
                 if debug:
-                    print(f"WRONG: {x, y}, RGB: {parse_rbg_int2tuple(rgb_int)}(Required) != {parse_rbg_int2tuple(pixel)}(Real)")
+                    print(f"WRONG: {x, y}, RGB: {parse_rgb_int2tuple(rgb_int)}(Required) != {parse_rgb_int2tuple(pixel) if isinstance(pixel, int) else pixel}(Real)")
                 wrong += 1
             else:
                 correct += 1

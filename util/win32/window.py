@@ -10,11 +10,11 @@ from util.win32 import T_PyCDC, win32api, win32gui, win32con, win32ui
 from util.win32.datatypes import Rect
 
 
-def parse_rbg_int2tuple(rgb_int: int):
+def parse_rgb_int2tuple(rgb_int: int):
     return rgb_int & 0xff, (rgb_int >> 8) & 0xff, (rgb_int >> 16) & 0xff
 
 
-def parse_rbg_tuple2int(rgb_tuple: tuple):
+def parse_rgb_tuple2int(rgb_tuple: tuple):
     return rgb_tuple[0] | rgb_tuple[1] << 8 | rgb_tuple[2] << 16
 
 
@@ -22,7 +22,7 @@ def get_pixel(hwnd_dc: int, x, y, as_int=False):
     rgb_int = win32gui.GetPixel(hwnd_dc, x, y)
     if as_int:
         return rgb_int
-    return parse_rbg_int2tuple(rgb_int)
+    return parse_rgb_int2tuple(rgb_int)
 
 
 def create_data_bitmap(x, y, width, height, dc: T_PyCDC, cdc: T_PyCDC = None):
