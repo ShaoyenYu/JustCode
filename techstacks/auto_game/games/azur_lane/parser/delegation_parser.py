@@ -15,8 +15,6 @@ from util.io import load_yaml
 
 logging.logger.setLevel("WARN")
 
-__all__ = ["DELEGATIONS"]
-
 re.search(r".*?(\D+)", "123:A").group(1)
 
 match_multi_template_ = debug_show(match_multi_template)
@@ -118,6 +116,11 @@ class Parser:
             "label_mission_name": (200, 20, 290, 36)
         }
     }
+    DELEGATIONS = sum([
+        [parse_delegation_dict(v) for v in values]
+        for key, values in load_yaml(CONFIG_DELEGATION).items() if key != "__Proto__"],
+        start=[]
+    )
 
     @classmethod
     def parse_label_level_locs(cls, image_ori):
@@ -175,7 +178,7 @@ class Parser:
         locs = cls.parse_label_level_locs(image_ori) if locs is None else locs
 
         # use label level as an anchor, to locate other components
-        x_rel, y_rel = am.resolve("Popup_Commission.Scene_DelegationList.Label_Level.Label_Processing", "RelPos")
+        x_rel, y_rel = am.rel_image_rect("Popup_Commission.Scene_DelegationList.Label_Level.Label_Processing")
         height, width = cls.templates["label_processing"].shape[:2]
         for loc in locs:
             match_ratio = cv2.matchTemplate(
@@ -183,29 +186,22 @@ class Parser:
                 cls.templates["label_processing"], cv2.TM_CCOEFF_NORMED)
             yield match_ratio > thresh
 
+    @classmethod
+    def find_most_similar_delegation(cls, ocr_res):
+        val_max = 0
+        res = None
+        for phrase in (x.name for x in cls.DELEGATIONS):
+            if (val_cur := ratio(ocr_res, phrase)) >= val_max:
+                val_max = val_cur
+                res = phrase
+        return res, val_max
 
-def find_most_similar(ocr_res):
-    val_max = 0
-    res = None
-    for phrase in (x.name for x in DELEGATIONS):
-        # if (val_cur := damerau_levenshtein(ocr_res, phrase, True)) >= val_max:
-        if (val_cur := ratio(ocr_res, phrase)) >= val_max:
-            val_max = val_cur
-            res = phrase
-    return res, val_max
-
-
-DELEGATIONS = sum([
-    [parse_delegation_dict(v) for v in values]
-    for key, values in load_yaml(CONFIG_DELEGATION).items() if key != "__Proto__"],
-    start=[]
-)
 
 if __name__ == '__main__':
     from pathlib import Path
     from techstacks.auto_game.games.azur_lane.config import DIR_TESTCASE
 
-    dir_test = Path(f"{DIR_TESTCASE}/commission/delegation/label_time_limit")
+    dir_test = Path(f"{DIR_TESTCASE}/commission/delegation_list/label_time_limit")
     test_values = load_yaml(dir_test / "test_values.yaml")
     for file_name, values in test_values.items():
         img = cv2.imread(f"{dir_test}/{file_name}")[:, :, ::-1]
