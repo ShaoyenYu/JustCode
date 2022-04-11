@@ -1,10 +1,10 @@
 # Common Utility
 Button_BackToMain: &Button_BackToMain
   __Rect: [ [ 1829, 39, 16773086 ], [ 1860, 66, 16773070 ], ]
-  __Eigen: [
-    [ 1844, 28, 16777199 ], [ 1823, 44, 16775126 ], [ 1864, 43, 16776175 ],
-    [ 1828, 65, 16774094 ], [ 1860, 66, 16773070 ],
-  ]
+#  __Eigen: [
+#    [ 1843, 28, 16776942 ], [ 1824, 41, 16773086 ], [ 1863, 42, 16776175 ],
+#    [ 1829, 65, 16246726 ], [ 1859, 64, 16248782 ],
+#  ]
 
 Scene_DelegationList: &Scene_DelegationList
   Label_Delegation:
@@ -17,18 +17,18 @@ Scene_DelegationList: &Scene_DelegationList
       [ 1395, 38, 16771030 ], [ 1455, 38, 16774127 ], [ 1472, 38, 15652557 ], [ 1508, 32, 16776191 ],  # 文字 - 可出舰队
     ]
   Label_Mission:
-    __Image: !!str /assets/commission/delegation/Label_Mission.png
+    __Image: !!str /assets/commission/delegation_list/Label_Mission.png
   Label_Level:
-    __Image: !!str /assets/commission/delegation/Label_Level.png
-    Label_LevelNo:
-      __RelPos: [ ]
-    Label_TimeLimit:
-      __RelPos
+    __Image: !!str /assets/commission/delegation_list/Label_Level.png
+    #    Label_LevelNo:
+    #      __RelPos: [ ]
+    #    Label_TimeLimit:
+    #      __RelPos
     Label_Processing:
-      __Image: !!str /assets/commission/delegation/Label_Processing.png
-      __RelPos: [ 260, 134 ]
+      __Image: !!str /assets/commission/delegation_list/Label_Processing.png
+      __RelImageRect: [ 260, 134 ]
   Label_Oil:
-    __Image: !!str /assets/commission/delegation/Label_Oil.png
+    __Image: !!str /assets/commission/delegation_list/Label_Oil.png
 
 Popup_Commission: &Popup_Commission
   __Rect: [ [ 0, 194, 9128000 ], [ 68, 325, 7030856 ], ]
@@ -41,9 +41,26 @@ Popup_Commission: &Popup_Commission
       [ 44, 476, 16777215 ], [ 44, 688, 16777215 ], [ 44, 900, 16777215 ],
     ]
   Label_Mission:
-    __Image: !!str /assets/commission/delegation/Label_Mission.png
+    __Image: !!str /assets/commission/delegation_list/Label_Mission.png
+
+  Popup_Delegation:
+    __Rect: [ [ 22, 333, 7558499 ], [ 559, 498, 8083811 ] ]
+    Label_RightBottomAnchor:
+      __Image: !!str /assets/commission/delegation/Label_RightBottomAnchor.png
+      __ImageRect: [ [ 389, 335 ], [ 402, 900 ] ]
+
+      Label_RemainingTime:
+        __RelImageRect: [ 200, -20, 145, 40 ]
+      Button_Complete:
+        __RelImageRect: [ 245, -32, 80, 30 ]
+
+  #    Label_Missions:
+  #      __ImageRect: [ [ 311, 335 ], [ 401, 900 ] ]
+  #      __Images:
+  #        Idle: !!str /assets/commission/delegation/Label_Mission_Idle.png
+  #        Ongoing: !!str /assets/commission/delegation/Label_Mission_Ongoing.png
   Scene_DelegationList: *Scene_DelegationList
-  Scene_DelegationSuccess:
+  Popup_DelegationSuccess:
     __Eigen: [
       [ 294, 161, 8776695 ],[ 350, 232, 8442101 ], [ 412, 153, 11927551 ], [ 473, 221, 7077887 ],
       [ 518, 223, 4899583 ],[ 579, 184, 6542335 ], [ 643, 159, 10875903 ], [ 679, 229, 3654143 ],
@@ -96,6 +113,7 @@ Main: # 主界面
   # 左侧导航栏
   Button_Commission: # 舰队事项
     __Rect: [ [ 11, 220, 4337705 ], [ 50, 279, 4337705 ], ]
+    __Eigen: [ [ 5, 247, 16250871 ], [ 10, 253, 16250871 ], ]
     Popup_Commission: *Popup_Commission # 按钮 - 舰队事项
   # 底部导航栏
   Button_Shop: # 按钮 - 商店
@@ -108,8 +126,8 @@ Main: # 主界面
   Button_AnchorAweigh: # 按钮 - 出击
     __Rect: [ [ 1514, 435, 4568300 ], [ 1730, 648, 5416670 ] ]
     __Eigen: [
-      [ 1537, 468, 16777215 ], [ 1573, 473, 16777215 ],  # "出"
-      [ 1536, 455, 5419751 ], [ 1571, 456, 5094119 ],  # “击”
+      [ 1562, 460, 16777215 ], [ 1582, 497, 16777215 ],  # "出"
+      [ 1620, 511, 16777215 ],  # “击”
     ]
   Button_Formation: # 按钮 - 编队
     __Rect: [
@@ -214,6 +232,8 @@ CampaignChapter:
     Stages:
       3-5:
         __Rect: [ [ 1069, 764, 11913182 ], [ 1219, 896, 12254462 ] ]
+      13-1:
+        __Rect: [ [ 341, 380, 5389369 ], [ 586, 453, 8081738 ] ]
       13-4:
         __Rect: [ [ 1341, 801, 5558255 ], [ 1636, 865, 4336673 ] ]
 
@@ -238,6 +258,10 @@ PopupFleetSelect:
     __Eigen: [
       [ 185, 126, 16777215 ],[ 222, 134, 16777215 ], [ 288, 121, 16777215 ], [ 338, 141, 16777215 ],
     ]
+  Label_Marine:
+    __Eigen: [
+      [ 240, 332, 16777215 ], [ 236, 378, 16777215 ], [ 238, 402, 16777215 ], [ 245, 450, 16777215 ],
+    ]  # 文字 - 水面舰队
 
   Formation:
     Button_ChooseTeamOne:
