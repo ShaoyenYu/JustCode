@@ -336,13 +336,14 @@ class Scene:
             return False
 
         self.bounds[next_scene.name](self.window, *args, **kwargs)
+
+        if sleep > 0:
+            time.sleep(sleep)
+
         if has_arrived := next_scene.at_this_scene(self.window):
             self.update_scenes(next_scene(self.window))
         else:
             self.window.scene_cur.detect_scene()
-
-        if sleep > 0:
-            time.sleep(sleep)
         return has_arrived
 
     def detect_scene(self):
@@ -834,7 +835,7 @@ class PopupFleetSelection(Scene):
             "PopupFleetSelect.Label_FleetSelect",
             "PopupFleetSelect.Label_Marine",
         )
-        return window.compare_with_pixel(points_to_check, debug=False)
+        return window.compare_with_pixel(points_to_check)
 
     @staticmethod
     def goto_immediate_start(window):
@@ -872,17 +873,15 @@ class PopupFleetSelectionArbitrate(PopupFleetSelection):
 
     @Scene.bind_window
     def choose_team(self, window, team_one=None, team_two=None):
-        btns = am.ASSETS["PopupFleetSelect"]["Formation"]
+        btns = "PopupFleetSelect.Formation"
 
         if (key := self.map_fleet_no.get(team_one)) is not None:
-            btn = btns["Button_ChooseTeamOne"]
-            window.left_click(btn, sleep=.5)
-            window.left_click(btn[key], sleep=.5)
+            window.left_click(am.rect(f"{btns}.Button_ChooseTeamOne"), sleep=.5)
+            window.left_click(am.rect(f"{btns}.Button_ChooseTeamOne.{key}"), sleep=.5)
 
         if (key := self.map_fleet_no.get(team_two)) is not None:
-            btn = btns["Button_ChooseTeamTwo"]
-            window.left_click(btn, sleep=.5)
-            window.left_click(btn[key], sleep=1)
+            window.left_click(am.rect(f"{btns}.Button_ChooseTeamTwo"), sleep=.5)
+            window.left_click(am.rect(f"{btns}.Button_ChooseTeamTwo.{key}"), sleep=1)
 
 
 class PopupFleetSelectionFixed(PopupFleetSelection):
