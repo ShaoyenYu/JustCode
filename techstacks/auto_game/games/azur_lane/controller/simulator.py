@@ -40,9 +40,8 @@ class AzurLaneWindow(Window):
         super().left_click(position, sleep=sleep)
 
     def compare_with_pixel(self, pixels: TwoDimArrayLike, tolerance=0) -> bool:
-        template = pixels[:, 0:2]
-        real = np.apply_along_axis(lambda xy: self.pixel_from_window(*xy, as_int=True), axis=1, arr=template)
-        return (np.array(parse_int_bgr2rgb(real ^ template)).T <= tolerance).all()
+        real = np.apply_along_axis(lambda xy: self.pixel_from_window(*xy, as_int=True), axis=1, arr=pixels[:, 0:2])
+        return (np.array(parse_int_bgr2rgb(real ^ pixels[:, 2])).T <= tolerance).all()
 
     def compare_with_template(self, rect: list, template, threshold=1.00) -> bool:
         lt, rb = rect
