@@ -1,7 +1,8 @@
 import time
 
-from techstacks.auto_game.games.azur_lane.controller import scene
 from techstacks.auto_game.games.azur_lane.controller.simulator import Bluestack
+from techstacks.auto_game.games.azur_lane.interface import scene
+from techstacks.auto_game.games.azur_lane.interface.scene import Namespace
 from util.concurrent import KillableThread, PauseEventHandler
 
 
@@ -17,7 +18,8 @@ class TaskFarmSubmarineSOS(KillableThread):
 
     def start(self) -> None:
         super().start()
-        self.simulator.window_ctl.scene_cur.detect_scene()
+
+        self.simulator.gateway.detect_scene()
         self.refresh_handler = KillableThread(target=self.refresh_scene)
         self.refresh_handler.start()
 
@@ -31,87 +33,88 @@ class TaskFarmSubmarineSOS(KillableThread):
 
     def refresh_scene(self):
         while True:
-            self.simulator.window_ctl.scene_cur.detect_scene()
+            self.simulator.gateway.detect_scene()
             time.sleep(1)
 
     def from_main_to_anchor_aweigh(self):
         self.event_handler.wait("can_run")
         if self.simulator.window_ctl.scene_cur.at(scene.SceneMain):
-            self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_anchor_aweigh)
+            self.simulator.gateway.goto(Namespace.scene_anchor_aweigh)
 
     def from_anchor_aweigh_to_popup_rescue_sos(self):
         self.event_handler.wait("can_run")
         if self.simulator.window_ctl.scene_cur.at(scene.SceneAnchorAweigh):
-            if (rescue_no := self.simulator.window_ctl.scene_cur.recognize_rescue_times()) > 0:
+            if (rescue_no := self.simulator.window_ctl.scene_cur.recognize_rescue_times(self.simulator.window_ctl)) > 0:
                 print(f"remain rescue times: {rescue_no}")
-                self.simulator.window_ctl.scene_cur.goto(scene.Namespace.popup_rescue_sos)
+                self.simulator.gateway.goto(Namespace.popup_rescue_sos)
             return rescue_no
 
     def from_popup_rescue_sos_to_campaign_chapter(self):
         self.event_handler.wait("can_run")
         if self.simulator.window_ctl.scene_cur.at(scene.PopupRescueSOS):
-            if self.simulator.window_ctl.scene_cur.is_signal_found():
+            if self.simulator.window_ctl.scene_cur.is_signal_found(self.simulator.window_ctl):
                 print("signal found")
-                self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_campaign_chapter)
+                self.simulator.gateway.goto(Namespace.scene_campaign_chapter)
             else:
                 print("signal not found")
-                self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_campaign_chapter, sleep=1)
-                self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_campaign_chapter)
+                self.simulator.gateway.goto(Namespace.scene_campaign_chapter, sleep=1)
+                # self.simulator.gateway.goto(Namespace.scene_campaign_chapter)
 
     def from_campaign_chapter_to_stage_rescue_sos(self):
         self.event_handler.wait("can_run")
         if self.simulator.window_ctl.scene_cur.at(scene.SceneCampaignChapter):
-            has_arrived = self.simulator.window_ctl.scene_cur.goto(scene.Namespace.popup_stage_info, sleep=1,
-                                                                   chapter_no="3-5")
+            has_arrived = self.simulator.gateway.goto(Namespace.popup_stage_info, sleep=1, chapter_no="3-5")
             if not has_arrived:
-                self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_anchor_aweigh)
+                print("not arrived")
+                # time.sleep(2)
+                self.simulator.gateway.goto(Namespace.scene_anchor_aweigh)
 
     def from_stage_rescue_sos_to_campaign(self):
         self.event_handler.wait("can_run")
         if self.simulator.window_ctl.scene_cur.at(scene.PopupStageInfo):
-            self.simulator.window_ctl.scene_cur.goto(scene.Namespace.popup_fleet_selection_arbitrate)
+            self.simulator.gateway.goto(Namespace.popup_fleet_selection_arbitrate)
 
         if self.simulator.window_ctl.scene_cur.at(scene.PopupFleetSelectionArbitrate):
-            self.simulator.window_ctl.scene_cur.choose_team(team_one=1, team_two=3)
-            self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_campaign)
+            self.simulator.window_ctl.scene_cur.choose_team(self.simulator.window_ctl, team_one=1, team_two=3)
+            self.simulator.gateway.goto(Namespace.scene_campaign)
 
     def from_campaign_to_formation(self):
         self.event_handler.wait("can_run")
         if self.simulator.window_ctl.scene_cur.at(scene.SceneCampaign):
-            if self.simulator.window_ctl.scene_cur.attack_enemies():
+            if self.simulator.window_ctl.scene_cur.attack_enemies(self.simulator.window_ctl):
                 time.sleep(8)
 
     def from_formation_to_battle(self):
         self.event_handler.wait("can_run")
         if self.simulator.window_ctl.scene_cur.at(scene.PopupInfoAutoBattle):
-            self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_battle_formation)
+            self.simulator.gateway.goto(Namespace.scene_battle_formation)
         if self.simulator.window_ctl.scene_cur.at(scene.SceneBattleFormation):
-            self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_battle)
+            self.simulator.gateway.goto(Namespace.scene_battle)
 
     def from_checkpoint_to_campaign(self):
         self.event_handler.wait("can_run")
         if self.simulator.window_ctl.scene_cur.at(scene.PopupGetShip):
-            self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_campaign)
+            self.simulator.gateway.goto(Namespace.scene_campaign)
             time.sleep(10)
 
         if self.simulator.window_ctl.scene_cur.at(scene.SceneBattleCheckpoint00):
-            self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_campaign)
+            self.simulator.gateway.goto(Namespace.scene_campaign)
             time.sleep(10)
 
         if self.simulator.window_ctl.scene_cur.at(scene.SceneBattleCheckpoint01):
-            self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_get_items)
+            self.simulator.gateway.goto(Namespace.scene_get_items)
 
         if self.simulator.window_ctl.scene_cur.at(scene.SceneGetItems):
-            self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_battle_result)
+            self.simulator.gateway.goto(Namespace.scene_battle_result)
 
         if self.simulator.window_ctl.scene_cur.at(scene.SceneBattleResult):
-            self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_campaign)
+            self.simulator.gateway.goto(Namespace.scene_campaign)
             time.sleep(10)
 
     def from_campaign_info_to_campaign(self):
         self.event_handler.wait("can_run")
         if self.simulator.window_ctl.scene_cur.at(scene.PopupCampaignInfo):
-            self.simulator.window_ctl.scene_cur.goto(scene.Namespace.scene_campaign)
+            self.simulator.gateway.goto(Namespace.scene_campaign)
 
     def run(self) -> None:
         while True:

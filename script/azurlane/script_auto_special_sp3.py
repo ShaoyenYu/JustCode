@@ -5,9 +5,12 @@ from threading import Thread
 
 from pynput import keyboard
 
+import techstacks.auto_game.games.azur_lane.interface.scene.campaign.scene_battle
+import techstacks.auto_game.games.azur_lane.interface.scene.campaign.scene_campaign
+import techstacks.auto_game.games.azur_lane.interface.scene.main.scene_main
 from techstacks.auto_game.games.azur_lane.config import CONFIG_SCENE
-from techstacks.auto_game.games.azur_lane.controller import scene
-from techstacks.auto_game.games.azur_lane.controller.simulator import AzurLaneWindow
+from techstacks.auto_game.games.azur_lane.interface.scene import base
+from techstacks.auto_game.games.azur_lane.controller.simulator import GameWindow
 from util.io import load_yaml
 from util.win32 import win32gui
 
@@ -23,8 +26,8 @@ if (to_continue := input("Input y to continue, other to cancel: ")).lower() != "
 Path(RESULT_DIR).mkdir(parents=True, exist_ok=True)
 
 scenes = load_yaml(CONFIG_SCENE)
-w1 = AzurLaneWindow(window_name="BS_AzurLane")
-w2 = AzurLaneWindow(window_hwnd=win32gui.FindWindowEx(w1.hwnd, None, None, None))
+w1 = GameWindow(window_name="BS_AzurLane")
+w2 = GameWindow(window_hwnd=win32gui.FindWindowEx(w1.hwnd, None, None, None))
 
 
 def log(s, log_level="INFO"):
@@ -83,7 +86,7 @@ class EventHandler:
 
 
 class Operation:
-    def __init__(self, window: AzurLaneWindow):
+    def __init__(self, window: GameWindow):
         self.window = window
         self.battle_counts = 0
 
@@ -183,7 +186,7 @@ def loop_farm():
 
     while True:
         while not (Config.paused or Config.paused_by_mood):
-            if scene.PopupCampaignReward.at_this_scene(w1):
+            if techstacks.auto_game.games.azur_lane.interface.scene.campaign.scene_campaign.PopupCampaignReward.at_this_scene_impl(w1):
                 time.sleep(5)
                 log("Saving Rewards...")
                 w1.screenshot(
@@ -194,7 +197,7 @@ def loop_farm():
                 w2.left_click((1850, 300))  # just an empty space
                 time.sleep(1)
                 Config.is_outside_campaign = True
-            elif scene.PopupCampaignRewardWithMeta.at_this_scene(w1):
+            elif techstacks.auto_game.games.azur_lane.interface.scene.campaign.scene_campaign.PopupCampaignRewardWithMeta.at_this_scene_impl(w1):
                 time.sleep(5)
                 log("Saving Rewards...")
                 w1.screenshot(
@@ -205,14 +208,14 @@ def loop_farm():
                 w2.left_click((1850, 300))  # just an empty space
                 time.sleep(1)
                 Config.is_outside_campaign = True
-            elif scene.SceneMain.at_this_scene(w1):
+            elif techstacks.auto_game.games.azur_lane.interface.scene.main.scene_main.SceneMain.at_this_scene_impl(w1):
                 operator.scene_main_to_stage()
                 Config.is_outside_campaign = True
-            elif scene.SceneBattle.at_this_scene(w1) or scene.SceneCampaign.at_this_scene(w1):
+            elif techstacks.auto_game.games.azur_lane.interface.scene.campaign.scene_battle.SceneBattle.at_this_scene_impl(w1) or techstacks.auto_game.games.azur_lane.interface.scene.campaign.scene_campaign.SceneCampaign.at_this_scene_impl(w1):
                 time.sleep(5)
                 Config.is_outside_campaign = False
-            elif scene.PopupCampaignInfo.at_this_scene(w1):
-                scene.PopupCampaignInfo.goto_campaign(w2)
+            elif techstacks.auto_game.games.azur_lane.interface.scene.campaign.scene_campaign.PopupCampaignInfo.at_this_scene_impl(w1):
+                techstacks.auto_game.games.azur_lane.interface.scene.campaign.scene_campaign.PopupCampaignInfo.goto_campaign(w2)
                 Config.is_outside_campaign = False
             else:
                 Config.is_outside_campaign = False
