@@ -3,23 +3,19 @@ import time
 
 import numpy as np
 
-from techstacks.auto_game.games.azur_lane.config import CONFIG_SCENE
-from techstacks.auto_game.games.azur_lane.controller import scene
-from techstacks.auto_game.util.proto import TwoDimArrayLike
-from util.io import load_yaml
+from techstacks.auto_game.games.azur_lane.interface.entry import Gateway
+from techstacks.auto_game.games.azur_lane.interface.scene import SceneUnknown
 from util.win32 import win32gui
 from util.win32.monitor import set_process_dpi_awareness
-from util.win32.window import Window, parse_int_bgr2rgb
+from util.win32.window import Window
 
 set_process_dpi_awareness(2, silent=True)
 
-SCENES = load_yaml(CONFIG_SCENE)
 
-
-class AzurLaneWindow(Window):
+class GameWindow(Window):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.scene_prev = self.scene_cur = scene.SceneUnknown(self)
+        self.scene_prev = self.scene_cur = SceneUnknown
 
     @staticmethod
     def gen_random_xy(lt, rb):
@@ -39,27 +35,17 @@ class AzurLaneWindow(Window):
 
         super().left_click(position, sleep=sleep)
 
-    def compare_with_pixel(self, pixels: TwoDimArrayLike, tolerance=0) -> bool:
-        real = np.apply_along_axis(lambda xy: self.pixel_from_window(*xy, as_int=True), axis=1, arr=pixels[:, 0:2])
-        return (np.array(parse_int_bgr2rgb(real ^ pixels[:, 2])).T <= tolerance).all()
-
-    def compare_with_template(self, rect: list, template, threshold=1.00) -> bool:
-        lt, rb = rect
-        origin = self.screenshot(lt[0], lt[1], rb[0] - lt[0], rb[1] - lt[1])
-        min_value, max_value, min_loc, max_loc = scene.match_single_template(origin, template)
-        print(min_value, max_value)
-        return min_value >= threshold
-
 
 class Bluestack:
     def __init__(self, window_name: str):
-        self.window_sim = AzurLaneWindow(window_name=window_name)
-        self.window_ctl = AzurLaneWindow(window_hwnd=win32gui.FindWindowEx(self.window_sim.hwnd, None, None, None))
+        self.window_sim = GameWindow(window_name=window_name)
+        self.window_ctl = GameWindow(window_hwnd=win32gui.FindWindowEx(self.window_sim.hwnd, None, None, None))
+        self.gateway = Gateway(self.window_ctl)
 
 
 if __name__ == '__main__':
-    w = AzurLaneWindow(window_name="BS_AzurLane")
+    bs = Bluestack(window_name="BS_AzurLane")
     while True:
-        w.scene_cur.detect_scene()
-        print(w.scene_cur)
+        bs.gateway.detect_scene()
+        print(bs.gateway.scene_cur)
         time.sleep(1)
