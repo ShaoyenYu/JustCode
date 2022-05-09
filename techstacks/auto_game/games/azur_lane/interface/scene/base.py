@@ -126,7 +126,9 @@ class Scene(SceneRecognizer, SceneRouter, metaclass=SceneMeta):
         if sleep > 0:
             time.sleep(sleep)
 
-        return next_scene.at_this_scene_impl(window)
+        if has_arrived := next_scene.at_this_scene_impl(window):
+            window.scene_prev, window.scene_cur = window.scene_cur, next_scene
+        return has_arrived
 
 
 class SceneUnknown(Scene):
