@@ -1,4 +1,4 @@
-from techstacks.auto_game.games.azur_lane.entry import Gateway
+from techstacks.auto_game.games.azur_lane.manager import Gateway
 from techstacks.auto_game.util.window import GameWindow
 from util.win32 import win32gui
 from util.win32.monitor import set_process_dpi_awareness
