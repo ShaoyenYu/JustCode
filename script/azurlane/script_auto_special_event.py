@@ -6,8 +6,8 @@ from threading import Thread
 from pynput import keyboard
 
 from techstacks.auto_game.games.azur_lane.config import CONFIG_SCENE
-from techstacks.auto_game.games.azur_lane.controller.simulator import GameWindow
 from techstacks.auto_game.games.azur_lane.interface import scene
+from techstacks.auto_game.util.window import GameWindow
 from util.io import load_yaml
 from util.win32 import win32gui
 

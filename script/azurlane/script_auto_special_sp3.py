@@ -9,8 +9,7 @@ import techstacks.auto_game.games.azur_lane.interface.scene.campaign.scene_battl
 import techstacks.auto_game.games.azur_lane.interface.scene.campaign.scene_campaign
 import techstacks.auto_game.games.azur_lane.interface.scene.main.scene_main
 from techstacks.auto_game.games.azur_lane.config import CONFIG_SCENE
-from techstacks.auto_game.games.azur_lane.interface.scene import base
-from techstacks.auto_game.games.azur_lane.controller.simulator import GameWindow
+from techstacks.auto_game.util.window import GameWindow
 from util.io import load_yaml
 from util.win32 import win32gui
 

@@ -3,41 +3,14 @@ import time
 from collections import deque
 from pathlib import Path
 
-from pynput import keyboard
-
-import techstacks.auto_game.games.azur_lane.interface.scene
-import techstacks.auto_game.games.azur_lane.interface.scene.campaign.scene_battle
-import techstacks.auto_game.games.azur_lane.interface.scene.campaign.scene_campaign
-import techstacks.auto_game.games.azur_lane.interface.scene.campaign.scene_stage
-import techstacks.auto_game.games.azur_lane.interface.scene.main.scene_main
-import techstacks.auto_game.games.azur_lane.interface.scene.name
-from techstacks.auto_game.games.azur_lane.interface.scene import Namespace
-from techstacks.auto_game.games.azur_lane.interface import scene
+from techstacks.auto_game.games.azur_lane.controller.common import KeyboardHandler
 from techstacks.auto_game.games.azur_lane.controller.simulator import Bluestack
-from techstacks.auto_game.games.azur_lane.interface.scene import base
-from techstacks.auto_game.games.azur_lane.interface.scene.asset_manager import am
-from util.concurrent import KillableThread, PauseEventHandler
+from techstacks.auto_game.games.azur_lane.interface import scene
+from techstacks.auto_game.games.azur_lane.interface.scene import Namespace, base, am
+from util.concurrent import KillableThread
 
 BASE_DIR = f"{Path.home().as_posix()}/Pictures/AutoGame/AzurLane"
 EVENT_NAME = "CampaignChapter"
-
-
-class KeyboardHandler:
-    def __init__(self):
-        self._listener_keyboard = None
-        self.event_handler = PauseEventHandler(self, "can_run", "can_run_after_battle")
-
-    def start_listening(self):
-        self._listener_keyboard = keyboard.Listener(
-            on_release=self.on_keyboard_release,
-        )
-        self._listener_keyboard.start()
-
-    def on_keyboard_release(self, key):
-        if key is keyboard.Key.f9:
-            self.event_handler.reverse("can_run_after_battle")
-        elif key is keyboard.Key.f10:
-            self.event_handler.reverse("can_run")
 
 
 class TaskFarmChapter(KillableThread, KeyboardHandler):
@@ -53,7 +26,7 @@ class TaskFarmChapter(KillableThread, KeyboardHandler):
         self.cur_chapter = None
 
         self.team_01s = deque([4, 5])
-        self.target_stage = "13-1"
+        self.target_stage = "13-4"
 
         self.result_dir = f"{BASE_DIR}/{EVENT_NAME}/{self.target_stage}"
         Path(self.result_dir).mkdir(parents=True, exist_ok=True)
@@ -63,7 +36,7 @@ class TaskFarmChapter(KillableThread, KeyboardHandler):
     def start(self) -> None:
         super().start()
         self.start_listening()
-        self.simulator.gateway.detect_scene()
+        self.simulator.gateway.scene_manager.detect_scene()
         self.refresh_handler = KillableThread(target=self.refresh_scene)
         self.refresh_handler.start()
 
@@ -79,7 +52,7 @@ class TaskFarmChapter(KillableThread, KeyboardHandler):
         while True:
             self.event_handler.wait("can_run")
 
-            self.simulator.gateway.detect_scene()
+            self.simulator.gateway.scene_manager.detect_scene()
             time.sleep(1)
 
     def switch_to_chapter(self, target_chapter_no):
@@ -96,17 +69,14 @@ class TaskFarmChapter(KillableThread, KeyboardHandler):
 
     def from_main_to_anchor_aweigh(self):
         self.event_handler.wait("can_run")
-        if self.simulator.window_ctl.scene_cur.at(
-                techstacks.auto_game.games.azur_lane.interface.scene.main.scene_main.SceneMain):
-            self.simulator.gateway.goto(
-                Namespace.scene_anchor_aweigh)
+        if self.simulator.window_ctl.scene_cur.at(scene.SceneMain):
+            self.simulator.gateway.scene_manager.goto(Namespace.scene_anchor_aweigh)
 
     def from_anchor_aweigh_to_campaign_chapter(self, target_chapter_no=13):
         self.event_handler.wait("can_run")
 
-        if self.simulator.window_ctl.scene_cur.at(
-                techstacks.auto_game.games.azur_lane.interface.scene.main.scene_main.SceneAnchorAweigh):
-            self.simulator.gateway.goto(Namespace.scene_campaign_chapter)
+        if self.simulator.window_ctl.scene_cur.at(scene.SceneAnchorAweigh):
+            self.simulator.gateway.scene_manager.goto(Namespace.scene_campaign_chapter)
         if self.simulator.window_ctl.scene_cur.at(scene.SceneCampaignChapter):
             self.switch_to_chapter(target_chapter_no)
 
@@ -114,18 +84,18 @@ class TaskFarmChapter(KillableThread, KeyboardHandler):
         self.event_handler.wait("can_run")
         chapter_no, stage_no = (int(x) for x in self.target_stage.split("-"))
         if self.simulator.window_ctl.scene_cur.at(scene.SceneCampaignChapter) and self.cur_chapter == chapter_no:
-            self.simulator.gateway.goto(Namespace.popup_stage_info, sleep=1, chapter_no=self.target_stage)
+            self.simulator.gateway.scene_manager.goto(Namespace.popup_stage_info, sleep=1, chapter_no=self.target_stage)
 
     def from_stage_info_to_campaign(self):
         self.event_handler.wait("can_run")
         if self.simulator.window_ctl.scene_cur.at(scene.PopupStageInfo):
             self.simulator.window_ctl.scene_cur.set_automation(self.simulator.window_ctl, turn_on=True)
-            self.simulator.gateway.goto(Namespace.popup_fleet_selection_arbitrate)
+            self.simulator.gateway.scene_manager.goto(Namespace.popup_fleet_selection_arbitrate)
 
         if self.simulator.window_ctl.scene_cur.at(scene.PopupFleetSelectionArbitrate):
             self.team_01s.append(cur_team := self.team_01s.popleft())
             self.simulator.window_ctl.scene_cur.choose_team(self.simulator.window_ctl, team_one=cur_team, team_two=6)
-            self.simulator.gateway.goto(Namespace.scene_campaign)
+            self.simulator.gateway.scene_manager.goto(Namespace.scene_campaign)
 
     def wait_for_farming(self):
         self.event_handler.wait("can_run")
@@ -137,7 +107,7 @@ class TaskFarmChapter(KillableThread, KeyboardHandler):
     def from_campaign_info_to_campaign(self):
         self.event_handler.wait("can_run")
         if self.simulator.window_ctl.scene_cur.at(scene.PopupCampaignInfo):
-            self.simulator.gateway.goto(Namespace.scene_campaign)
+            self.simulator.gateway.scene_manager.goto(Namespace.scene_campaign)
 
     def save_result(self):
         self.event_handler.wait("can_run")
@@ -152,8 +122,7 @@ class TaskFarmChapter(KillableThread, KeyboardHandler):
         file = f"{self.result_dir}/{dt.datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
         self.cur_farm_time += 1
         self.simulator.window_ctl.screenshot(x, y, w, h, save_path=file)
-        self.simulator.gateway.goto(
-            Namespace.scene_campaign, sleep=1)
+        self.simulator.gateway.scene_manager.goto(Namespace.scene_campaign, sleep=1)
         self.event_handler.wait("can_run_after_battle")
 
     def run(self) -> None:
