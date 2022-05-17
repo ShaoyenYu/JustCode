@@ -33,10 +33,12 @@ class ConfigManager:
 
 
 class BaseTask(KillableThread):
+    config_manager = ConfigManager()
+    event_handler = PauseEventHandler("can_run")
+
     def __init__(self, window: GameWindow = None):
         KillableThread.__init__(self)
         self.event_handler = PauseEventHandler("can_run")
-        self.config_manager = ConfigManager()
         self.window = window
 
     def start(self) -> None:
@@ -46,6 +48,10 @@ class BaseTask(KillableThread):
     def stop(self):
         if self.is_alive():
             self.terminate()
+
+    @property
+    def config(self):
+        return self.config_manager.config
 
     @property
     def scene_cur(self):
