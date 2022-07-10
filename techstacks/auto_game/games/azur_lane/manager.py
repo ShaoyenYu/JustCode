@@ -21,7 +21,6 @@ class SceneManager:
     def refresh_scene(self):
         while True:
             self.detect_scene()
-            print(self.window.scene_cur)
             time.sleep(self.config["interval"])
 
     @property
@@ -59,14 +58,15 @@ class SceneManager:
 
 class TaskManager:
     TASKS_REGISTERED = {
-        x.__name__: x for x in globals().values() if type(x) is BaseTask.__class__ and issubclass(x, BaseTask)
+        x.name: x for x in globals().values() if type(x) is BaseTask.__class__ and issubclass(x, BaseTask)
     }
 
-    def __init__(self, **task_names):
-        self.tasks = {task_name: self.TASKS_REGISTERED[name] for task_name in task_names}
+    def __init__(self, game_window: GameWindow):
+        self.game_window = game_window
+        self.tasks = {task_name: task_class(self.game_window) for task_name, task_class in self.TASKS_REGISTERED.items()}
 
     # should provide task manage api here.
-    def resume_task(self):
+    def resume_task(self, task):
         pass
 
     def pause_tsk(self):
@@ -79,4 +79,5 @@ class TaskManager:
 class Gateway:
     def __init__(self, game_window):
         self.window = game_window
+        self.task_manager = TaskManager(self.window)
         self.scene_manager = SceneManager(self.window)
