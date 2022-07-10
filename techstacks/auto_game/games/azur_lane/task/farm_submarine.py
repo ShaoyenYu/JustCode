@@ -7,6 +7,8 @@ __all__ = ["TaskFarmSubmarineSOS"]
 
 
 class TaskFarmSubmarineSOS(BaseTask):
+    name = "FarmSubmarineSOS"
+
     remain_rescue_times = None
 
     @wait("can_run")

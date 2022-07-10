@@ -2,32 +2,34 @@ import datetime as dt
 import time
 from collections import deque
 
-from techstacks.auto_game.games.azur_lane.config import DIR_USR_AUTO_GAME_AZURLANE
 from techstacks.auto_game.games.azur_lane.interface import scene
-from techstacks.auto_game.games.azur_lane.task.base import BaseTask, wait, switch_scene
-from techstacks.auto_game.util import safe_get_dir
+from techstacks.auto_game.games.azur_lane.task.base import BaseTask, wait, switch_scene, Config
 from techstacks.auto_game.util.window import GameWindow
 
 __all__ = ["TaskFarmChapter"]
 
 
 class TaskFarmChapter(BaseTask):
+    name = "FarmChapter"
+    mkdir = True
+
     def __init__(self, window: GameWindow):
         super().__init__(window)
         self.event_handler.set_events("can_run_after_battle")
 
-        self.config_manager.set_batch({
-            "team_one": deque([4, 5]),
-            "target_stage": "13-1",
-            "max_farm_time": int(input("Input Max Farm Times: ")),
-        })
-        self.config_manager.set(
-            "result_dir",
-            safe_get_dir(f"{DIR_USR_AUTO_GAME_AZURLANE}/CampaignChapter/{self.config_manager.config['target_stage']}")
+        self.config_manager.set_all(
+            Config("team_one", None, default_value="4,5", introduction="Fleet to use for team one"),
+            Config("target_stage", None, default_value="13-4", introduction="Target stage to farm"),
+            Config("max_farm_times", None, default_value="20", introduction="Max times to farm"),
+            Config("result_dir", None, default_value=self.save_dir, introduction="Directory to save results")
         )
+        self.config_manager.set_config_from_input()
 
-        self.cur_chapter = None
+        self.target_stage = self.config_manager["target_stage"]
+        self.team_one = deque((int(x) for x in self.config_manager["team_one"].split(",")))
         self.cur_farm_time = 0
+        self.max_farm_times = int(self.config_manager["max_farm_times"])
+        self.cur_chapter = None
 
     @wait("can_run")
     def switch_to_chapter(self, target_chapter_no):
@@ -52,9 +54,9 @@ class TaskFarmChapter(BaseTask):
 
     @wait("can_run")
     def from_campaign_chapter_to_stage_info(self):
-        chapter_no, stage_no = (int(x) for x in self.config["target_stage"].split("-"))
+        chapter_no, stage_no = (int(x) for x in self.target_stage.split("-"))
         if self.scene_cur.at(scene.SceneCampaignChapter) and self.cur_chapter == chapter_no:
-            self.scene_cur.goto(self.window, scene.PopupStageInfo, sleep=1, chapter_no=self.config["target_stage"])
+            self.scene_cur.goto(self.window, scene.PopupStageInfo, sleep=1, chapter_no=self.target_stage)
 
     @wait("can_run")
     def from_stage_info_to_campaign(self):
@@ -63,7 +65,7 @@ class TaskFarmChapter(BaseTask):
             self.scene_cur.goto(self.window, scene.PopupFleetSelectionArbitrate)
 
         if self.scene_cur.at(scene.PopupFleetSelectionArbitrate):
-            self.config["team_one"].append(cur_team := self.config["team_one"].popleft())
+            self.team_one.append(cur_team := self.team_one.popleft())
             self.scene_cur.choose_team(self.window, team_one=cur_team, team_two=6)
             self.scene_cur.goto(self.window, scene.SceneCampaign)
 
@@ -88,7 +90,7 @@ class TaskFarmChapter(BaseTask):
             return
 
         time.sleep(5)
-        file = f"{self.config['result_dir']}/{dt.datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+        file = f"{self.save_dir}/{self.target_stage}/{dt.datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
         self.window.screenshot(x, y, w, h, save_path=file)
         self.cur_farm_time += 1
         self.scene_cur.goto(self.window, scene.SceneCampaign, sleep=1)
@@ -104,7 +106,7 @@ class TaskFarmChapter(BaseTask):
         self.from_campaign_info_to_campaign()
 
     def run(self) -> None:
-        while self.cur_farm_time < self.config["max_farm_time"]:
+        while self.cur_farm_time < self.max_farm_times:
             try:
                 self.execute()
                 time.sleep(1)
