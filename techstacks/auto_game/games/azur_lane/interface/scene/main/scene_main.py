@@ -51,7 +51,7 @@ class SceneMain(Scene):
 
 
 class PopupCommission(Scene):
-    name = "Popup.Commission"
+    name = Namespace.popup_commission
     ocr_int = load_recognizer()
     ocr_int.set_valid_chars("0123456789完成前往:")
 
@@ -153,7 +153,7 @@ class PopupCommission(Scene):
 
 
 class SceneAnchorAweigh(Scene):
-    name = "Scene.AnchorAweigh"
+    name = Namespace.scene_anchor_aweigh
 
     @classmethod
     def at_this_scene_impl(cls, window) -> bool:
