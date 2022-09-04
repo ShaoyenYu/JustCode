@@ -6,7 +6,6 @@ from typing import Dict, Optional
 import requests
 from PIL import Image
 from lxml import etree
-from matplotlib import pyplot as plt
 
 
 def parse_serial_no(serial_no) -> Optional[str]:
@@ -20,22 +19,8 @@ def parse_serial_no(serial_no) -> Optional[str]:
 class JavLibraryApi:
     base_url = "https://www.javlibrary.com/cn"
 
-    def __init__(self):
-        self.session = self.prepare_session()
-
-    @staticmethod
-    def prepare_session():
-        session = requests.session()
-        session.headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.120 Safari/537.36",
-            "Referer": "https://www.javlibrary.com/cn/",
-            "Proxy-Connection": "keep-alive",
-        }
-        session.proxies = {
-            "https": "socks5://127.0.0.1:10808",
-            "http": "socks5://127.0.0.1:10808"
-        }
-        return session
+    def __init__(self, session: requests.Session):
+        self.session = session
 
     def impl_search_by_keyword(self, serial_no):
         url_video_list = f"{self.base_url}/vl_searchbyid.php?keyword={serial_no}"
@@ -43,9 +28,8 @@ class JavLibraryApi:
         return resp
 
     def impl_get_video_detail(self, video_id):
-        video_detail = f"{self.base_url}/?v={video_id}"
-        print(video_detail)
-        return self.session.get(video_detail)
+        url_video_detail = f"{self.base_url}/?v={video_id}"
+        return self.session.get(url_video_detail)
 
     def search_by_keyword(self, serial_no) -> Optional[Dict[str, str]]:
         resp = self.impl_search_by_keyword(serial_no)
@@ -99,8 +83,23 @@ class JavLibraryApi:
 
 
 class JavRecognizer:
-    def __init__(self):
-        self.jav_api = JavLibraryApi()
+    def __init__(self, session=None):
+        self.session = session or self.prepare_session()
+        self.jav_api = JavLibraryApi(self.session)
+
+    @staticmethod
+    def prepare_session():
+        session = requests.session()
+        session.headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.120 Safari/537.36",
+            "Referer": "https://www.javlibrary.com/cn/",
+            "Proxy-Connection": "keep-alive",
+        }
+        session.proxies = {
+            "https": "socks5://127.0.0.1:10808",
+            "http": "socks5://127.0.0.1:10808"
+        }
+        return session
 
     def recognize(self, serial_no, with_thumbnail=True):
         serial_no_reg = parse_serial_no(serial_no)
@@ -108,15 +107,23 @@ class JavRecognizer:
         return video_info
 
 
-def run():
+def main():
+    from matplotlib import pyplot as plt
+    from util.logger import init_logger
+    logger = init_logger("Logger(JavAnswerMe)")
+
     plt.rcParams["font.sans-serif"] = ["SimHei"]
     plt.rcParams["axes.unicode_minus"] = False
+
     with_thumbnail = True if input("Download thumbnail? y(yes), n(no)") == "y" else False
 
     recognizer = JavRecognizer()
     while True:
         try:
-            serial_no = str(input("#" * 64 + "\n"))
+            logger.info(f"{'#' * 64} \n")
+            logger.info(f"Input a serial no:\n")
+            serial_no = str(input(""))
+
             if serial_no == "?":
                 break
 
@@ -134,13 +141,13 @@ def run():
                 plt.title(text)
                 plt.show()
 
-            print(text)
-            print("#" * 64, "\n")
+            logger.info(text)
+            logger.info(f"{'#' * 64} \n")
             time.sleep(1)
         except Exception as e:
-            print(e)
+            logger.info(e)
             continue
 
 
 if __name__ == '__main__':
-    run()
+    main()
