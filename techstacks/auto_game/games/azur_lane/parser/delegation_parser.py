@@ -8,11 +8,9 @@ from paddleocr import PaddleOCR
 from lib.dummy_paddleocr import load_recognizer
 from techstacks.auto_game.games.azur_lane.config import CONFIG_DELEGATION
 from techstacks.auto_game.games.azur_lane.interface.scene.asset_manager import am
-from techstacks.auto_game.util import gen_key, logging
+from techstacks.auto_game.util import gen_key
 from techstacks.auto_game.util.game_cv import match_multi_template, debug_show
 from util.io import load_yaml
-
-logging.logger.setLevel("WARN")
 
 re.search(r".*?(\D+)", "123:A").group(1)
 
