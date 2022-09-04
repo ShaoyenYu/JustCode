@@ -6,6 +6,7 @@ from lib.dummy_paddleocr import load_recognizer
 from techstacks.auto_game.games.azur_lane.interface.scene.asset_manager import am
 from techstacks.auto_game.util import game_cv
 from techstacks.auto_game.util.proto import TwoDimArrayLike
+from techstacks.auto_game.games.azur_lane import logger_azurlane
 from util.win32.window import parse_int_bgr2rgb
 
 ocr_paddle = load_recognizer()
@@ -108,6 +109,7 @@ class SceneRouter:
 class Scene(SceneRecognizer, SceneRouter, metaclass=SceneMeta):
     name = ""
     window = None
+    logger = logger_azurlane
 
     def __init__(self, window):
         self.window = window
@@ -118,7 +120,7 @@ class Scene(SceneRecognizer, SceneRouter, metaclass=SceneMeta):
     @classmethod
     def goto(cls, window, next_scene, sleep=0, *args, **kwargs):
         if not cls.at_this_scene(window=window):
-            print(f"origin scene changed unexpectedly: expected->{cls}, cur->{window.scene_cur}")
+            cls.logger.warning(f"scene changed unexpectedly (expected->{cls}, cur->{window.scene_cur})")
             return False
 
         cls.ways_to(next_scene.name)(window, *args, **kwargs)

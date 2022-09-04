@@ -1,6 +1,7 @@
 import time
 from threading import Thread
 
+from techstacks.auto_game.games.azur_lane import logger_azurlane
 from techstacks.auto_game.games.azur_lane.interface.scene import *
 from techstacks.auto_game.games.azur_lane.task import *
 from techstacks.auto_game.util.window import GameWindow
@@ -8,6 +9,8 @@ from techstacks.auto_game.util.window import GameWindow
 
 class SceneManager:
     SCENES_REGISTERED = {x.name: x for x in globals().values() if type(x) is Scene.__class__ and issubclass(x, Scene)}
+
+    logger = logger_azurlane
 
     def __init__(self, game_window: GameWindow):
         self.window = game_window
@@ -42,7 +45,7 @@ class SceneManager:
         if self.window.scene_cur.at(scene_cur):
             return
         self.window.scene_prev, self.window.scene_cur = scene_prev or self.window.scene_cur, scene_cur
-        print(f"SWITCH SCENE: {self.window.scene_prev} --> {self.window.scene_cur}")
+        self.logger.info(f"switch scene ({self.window.scene_prev} --> {self.window.scene_cur})")
 
     def detect_scene(self):
         self.update_scenes(self._detect_scene(self.window))
