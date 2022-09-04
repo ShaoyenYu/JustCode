@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from techstacks.auto_game.games.azur_lane import logger_azurlane
 from techstacks.auto_game.games.azur_lane.config import DIR_USR_AUTO_GAME_AZURLANE
 from techstacks.auto_game.util.window import GameWindow
 from util.concurrent import KillableThread, PauseEventHandler
@@ -66,15 +67,16 @@ class BaseTask(KillableThread):
 
     config_manager = ConfigManager()
     event_handler = PauseEventHandler("can_run")
+    logger = logger_azurlane
 
     def __init__(self, window: GameWindow = None):
         KillableThread.__init__(self)
         self.event_handler = PauseEventHandler("can_run")
         self.window = window
 
-        self.save_dir = f"{DIR_USR_AUTO_GAME_AZURLANE}/{self.name}"
+        self.base_dir = f"{DIR_USR_AUTO_GAME_AZURLANE}/{self.name}"
         if self.mkdir:
-            Path(self.save_dir).mkdir(parents=True, exist_ok=True)
+            Path(self.base_dir).mkdir(parents=True, exist_ok=True)
 
     def start(self) -> None:
         self.event_handler.resume()

@@ -21,9 +21,14 @@ class TaskFarmChapter(BaseTask):
             Config("team_one", None, default_value="4,5", introduction="Fleet to use for team one"),
             Config("target_stage", None, default_value="13-4", introduction="Target stage to farm"),
             Config("max_farm_times", None, default_value="20", introduction="Max times to farm"),
-            Config("result_dir", None, default_value=self.save_dir, introduction="Directory to save results")
+            Config("base_dir", None, default_value=f"{self.base_dir}", introduction="Basic directory to save results")
         )
         self.config_manager.set_config_from_input()
+
+        # hotfix
+        from pathlib import Path
+        self.save_dir = Path(f"{self.config_manager['base_dir']}/{self.config_manager['target_stage']}")
+        Path(self.save_dir).mkdir(parents=True, exist_ok=True)
 
         self.target_stage = self.config_manager["target_stage"]
         self.team_one = deque((int(x) for x in self.config_manager["team_one"].split(",")))
@@ -90,7 +95,7 @@ class TaskFarmChapter(BaseTask):
             return
 
         time.sleep(5)
-        file = f"{self.save_dir}/{self.target_stage}/{dt.datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+        file = f"{self.save_dir}/{dt.datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
         self.window.screenshot(x, y, w, h, save_path=file)
         self.cur_farm_time += 1
         self.scene_cur.goto(self.window, scene.SceneCampaign, sleep=1)
@@ -112,6 +117,6 @@ class TaskFarmChapter(BaseTask):
                 time.sleep(1)
 
             except Exception as e:
-                print(e)
+                self.logger.error(e)
             time.sleep(1)
-        print("finished")
+        self.logger.info("finished")
